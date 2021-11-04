@@ -95,6 +95,18 @@ void EQ_Hubert_MoszAudioProcessor::prepareToPlay (double sampleRate, int samples
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
+
+    juce::dsp::ProcessSpec spec;
+
+    spec.maximumBlockSize = samplesPerBlock;
+
+    spec.numChannels = 1;
+
+    spec.sampleRate = sampleRate;
+
+    leftChain.prepare(spec);
+    rightChain.prepare(spec);
+
 }
 
 void EQ_Hubert_MoszAudioProcessor::releaseResources()
@@ -144,18 +156,17 @@ void EQ_Hubert_MoszAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
+    juce::dsp::AudioBlock<float> block(buffer);
 
-        // ..do something to the data...
-    }
+    auto leftBlock = block.getSingleChannelBlock(0);
+    auto rightBlock = block.getSingleChannelBlock(1);
+
+    juce::dsp::ProcessContextReplacing<float> leftContext(leftBlock);
+    juce::dsp::ProcessContextReplacing<float> rightContext(rightBlock);
+
+    leftChain.process(leftContext);
+    rightChain.process(rightContext);
+
 }
 
 //==============================================================================
@@ -188,32 +199,31 @@ juce::AudioProcessorValueTreeState::ParameterLayout EQ_Hubert_MoszAudioProcessor
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
-    layout.add(std::make_unique<juce::AudioParameterFloat>("LowCut Frequency", "LowCut Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 1.f), 20.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("LowCut Frequency", "LowCut Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.25f), 20.f));
 
-    layout.add(std::make_unique<juce::AudioParameterFloat>("HighCut Frequency", "HighCut Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 1.f), 20000.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("HighCut Frequency", "HighCut Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.25f), 20000.f));
 
     // Peak 1
-    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak1 Frequency", "Peak1 Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 1.f), 1000.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak1 Frequency", "Peak1 Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.25f), 1000.f));
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak1 Gain", "Peak1 Gain", juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f), 0.0f));
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak1 Q", "Peak1 Q", juce::NormalisableRange<float>(0.1f, 10.0f, 0.05f, 1.f), 1.f));
-
-    /*
+/*
     // Peak 2
-    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak2 Frequency", "Peak2 Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 1.f), 1000.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak2 Frequency", "Peak2 Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.25f), 1000.f));
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak2 Gain", "Peak2 Gain", juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f), 0.0f));
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak2 Q", "Peak2 Q", juce::NormalisableRange<float>(0.1f, 10.0f, 0.05f, 1.f), 1.f));
 
     // Peak 3
-    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak3 Frequency", "Peak3 Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 1.f), 1000.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak3 Frequency", "Peak3 Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.25f), 1000.f));
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak3 Gain", "Peak3 Gain", juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f), 0.0f));
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak3 Q", "Peak3 Q", juce::NormalisableRange<float>(0.1f, 10.0f, 0.05f, 1.f), 1.f));
-    */
+*/
 
     juce::StringArray stringArray; //tworzenie stringow per ocave
     for (int i = 0; i < 4; i++)
