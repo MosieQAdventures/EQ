@@ -96,15 +96,19 @@ private:
     using Coefficients = Filter::CoefficientsPtr;
     static void updateCoefficients(Coefficients& ld, const Coefficients& replacements);
 
+    template<int Index, typename ChainType, typename CoefficientType>
+    void update(ChainType& chain,
+        const CoefficientType& coefficients)
+    {
+        updateCoefficients(chain.template get<Index>().coefficients, coefficients[Index]);
+        chain.template setBypassed<Index>(false);
+    }
+
     template<typename ChainType, typename CoefficientType>
     void updateCutFilter(ChainType& leftLowCut, 
                         const CoefficientType& cutCoefficients, 
                         const Slope& lowCutSlope)
     {
-        //auto cutCoefficients = juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq, sampleRate, 2 * (chainSettings.lowCutSlope + 1));
-
-        //auto& leftLowCut = leftChain.get<ChainPositions::LowCut>();
-
         leftLowCut.template setBypassed<0>(true);
         leftLowCut.template setBypassed<1>(true);
         leftLowCut.template setBypassed<2>(true);
@@ -112,6 +116,24 @@ private:
 
         switch (lowCutSlope)
         {
+        case Slope_48:
+        {
+            update<3>(leftLowCut, cutCoefficients);
+        }
+        case Slope_36:
+        {
+            update<2>(leftLowCut, cutCoefficients);
+        }
+        case Slope_24:
+        {
+            update<1>(leftLowCut, cutCoefficients);
+        }
+        case Slope_12:
+        {
+            update<0>(leftLowCut, cutCoefficients);
+        }
+
+            /*
         case Slope_12:
         {
             *leftLowCut.template get<0>().coefficients = *cutCoefficients[0];
@@ -147,7 +169,7 @@ private:
             *leftLowCut.template get<3>().coefficients = *cutCoefficients[3];
             leftLowCut.template setBypassed<3>(false);
             break;
-        }
+        }*/
         }
 
     }
