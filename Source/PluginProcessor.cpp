@@ -109,10 +109,12 @@ void EQ_Hubert_MoszAudioProcessor::prepareToPlay (double sampleRate, int samples
 
     auto chainSettings = getChainSettings(apvts);
 
-    auto peakCoefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, chainSettings.peakFreq, chainSettings.peakQuality, juce::Decibels::decibelsToGain(chainSettings.peakGainInDecibels));
+    updatePeakFilter(chainSettings);
+
+ /*   auto peakCoefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, chainSettings.peakFreq, chainSettings.peakQuality, juce::Decibels::decibelsToGain(chainSettings.peakGainInDecibels));
     
     *leftChain.get<ChainPositions::Peak>().coefficients = *peakCoefficients;
-    *rightChain.get<ChainPositions::Peak>().coefficients = *peakCoefficients;
+    *rightChain.get<ChainPositions::Peak>().coefficients = *peakCoefficients;*/
 
     auto cutCoefficients = juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq, sampleRate, 2 * (chainSettings.lowCutSlope + 1));
 
@@ -263,10 +265,11 @@ void EQ_Hubert_MoszAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
 
     auto chainSettings = getChainSettings(apvts);
 
-    auto peakCoefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(), chainSettings.peakFreq, chainSettings.peakQuality, juce::Decibels::decibelsToGain(chainSettings.peakGainInDecibels));
+    updatePeakFilter(chainSettings);
+  /*  auto peakcoefficients = juce::dsp::iir::coefficients<float>::makepeakfilter(getsamplerate(), chainsettings.peakfreq, chainsettings.peakquality, juce::decibels::decibelstogain(chainsettings.peakgainindecibels));
 
-    *leftChain.get<ChainPositions::Peak>().coefficients = *peakCoefficients;
-    *rightChain.get<ChainPositions::Peak>().coefficients = *peakCoefficients;
+    *leftchain.get<chainpositions::peak>().coefficients = *peakcoefficients;
+    *rightchain.get<chainpositions::peak>().coefficients = *peakcoefficients;*/
 
     // :(
     auto cutCoefficients = juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq, getSampleRate(), 2 * (chainSettings.lowCutSlope + 1));
@@ -418,6 +421,21 @@ ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts)
     settings.highCutSlope = static_cast<Slope>(apvts.getRawParameterValue("HighCut Slope")->load());
   
     return settings;
+}
+
+void EQ_Hubert_MoszAudioProcessor::updatePeakFilter(const ChainSettings& chainSettings) 
+{
+    auto peakCoefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(), chainSettings.peakFreq, chainSettings.peakQuality, juce::Decibels::decibelsToGain(chainSettings.peakGainInDecibels));
+
+//    *leftChain.get<ChainPositions::Peak>().coefficients = *peakCoefficients;
+//    *rightChain.get<ChainPositions::Peak>().coefficients = *peakCoefficients;
+    updateCoefficients(leftChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
+    updateCoefficients(rightChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
+}
+
+void EQ_Hubert_MoszAudioProcessor::updateCoefficients(Coefficients& old, const Coefficients& replacements)
+{
+    *old = *replacements;
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout EQ_Hubert_MoszAudioProcessor::createParameterLayout()

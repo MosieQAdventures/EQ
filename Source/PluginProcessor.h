@@ -91,6 +91,11 @@ private:
         HighCut 
     }; //tutaj pewnie wiecej peakow tez
 
+    void updatePeakFilter(const ChainSettings& chainSettings);
+
+    using Coefficients = Filter::CoefficientsPtr;
+    static void updateCoefficients(Coefficients& ld, const Coefficients& replacements);
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EQ_Hubert_MoszAudioProcessor)
 };
