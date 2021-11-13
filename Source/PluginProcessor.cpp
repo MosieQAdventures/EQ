@@ -119,13 +119,15 @@ void EQ_Hubert_MoszAudioProcessor::prepareToPlay (double sampleRate, int samples
     auto cutCoefficients = juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq, sampleRate, 2 * (chainSettings.lowCutSlope + 1));
 
     auto& leftLowCut = leftChain.get<ChainPositions::LowCut>();
+   
+    updateCutFilter(leftLowCut, cutCoefficients, chainSettings.lowCutSlope);
 
-    leftLowCut.setBypassed<0>(true);
-    leftLowCut.setBypassed<1>(true);
-    leftLowCut.setBypassed<2>(true);
-    leftLowCut.setBypassed<3>(true);
+   // leftLowCut.setBypassed<0>(true);
+    //leftLowCut.setBypassed<1>(true);
+    //leftLowCut.setBypassed<2>(true);
+    //leftLowCut.setBypassed<3>(true);
 
-    switch (chainSettings.lowCutSlope)
+   /* switch (chainSettings.lowCutSlope)
     {
         case Slope_12:
         {
@@ -163,16 +165,18 @@ void EQ_Hubert_MoszAudioProcessor::prepareToPlay (double sampleRate, int samples
             leftLowCut.setBypassed<3>(false);
             break;
         }
-    }
+    }*/
 
     auto& rightLowCut = rightChain.get<ChainPositions::LowCut>();
 
-    rightLowCut.setBypassed<0>(true);
-    rightLowCut.setBypassed<1>(true);
-    rightLowCut.setBypassed<2>(true);
-    rightLowCut.setBypassed<3>(true);
+    updateCutFilter(rightLowCut, cutCoefficients, chainSettings.lowCutSlope);
 
-    switch (chainSettings.lowCutSlope)
+   // rightLowCut.setBypassed<0>(true);
+    //rightLowCut.setBypassed<1>(true);
+    //rightLowCut.setBypassed<2>(true);
+    //rightLowCut.setBypassed<3>(true);
+
+    /*switch (chainSettings.lowCutSlope)
     {
         case Slope_12:
         {
@@ -210,7 +214,7 @@ void EQ_Hubert_MoszAudioProcessor::prepareToPlay (double sampleRate, int samples
             rightLowCut.setBypassed<3>(false);
             break;
         }
-    }
+    }*/
 
 
 
@@ -266,16 +270,13 @@ void EQ_Hubert_MoszAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
     auto chainSettings = getChainSettings(apvts);
 
     updatePeakFilter(chainSettings);
-  /*  auto peakcoefficients = juce::dsp::iir::coefficients<float>::makepeakfilter(getsamplerate(), chainsettings.peakfreq, chainsettings.peakquality, juce::decibels::decibelstogain(chainsettings.peakgainindecibels));
-
-    *leftchain.get<chainpositions::peak>().coefficients = *peakcoefficients;
-    *rightchain.get<chainpositions::peak>().coefficients = *peakcoefficients;*/
-
-    // :(
+    
     auto cutCoefficients = juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq, getSampleRate(), 2 * (chainSettings.lowCutSlope + 1));
 
     auto& leftLowCut = leftChain.get<ChainPositions::LowCut>();
 
+    updateCutFilter(leftLowCut, cutCoefficients, chainSettings.lowCutSlope);
+    /*
     leftLowCut.setBypassed<0>(true);
     leftLowCut.setBypassed<1>(true);
     leftLowCut.setBypassed<2>(true);
@@ -319,10 +320,13 @@ void EQ_Hubert_MoszAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
         leftLowCut.setBypassed<3>(false);
         break;
     }
-    }
+    }*/
 
     auto& rightLowCut = rightChain.get<ChainPositions::LowCut>();
 
+    updateCutFilter(rightLowCut, cutCoefficients, chainSettings.lowCutSlope);
+
+    /*
     rightLowCut.setBypassed<0>(true);
     rightLowCut.setBypassed<1>(true);
     rightLowCut.setBypassed<2>(true);
@@ -366,7 +370,7 @@ void EQ_Hubert_MoszAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
         rightLowCut.setBypassed<3>(false);
         break;
     }
-    }
+    }*/
     // :(
 
     juce::dsp::AudioBlock<float> block(buffer);
