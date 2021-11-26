@@ -37,13 +37,37 @@ private:
     // access the processor object that created it.
     EQ_Hubert_MoszAudioProcessor& audioProcessor;
 
-    CustomRotarySlider peakFreqSlider,
-        peakGainSlider,
-        peakQualitySlider,
+    CustomRotarySlider peak1FreqSlider,
+        peak1GainSlider,
+        peak1QualitySlider,
+        peak2FreqSlider,
+        peak2GainSlider,
+        peak2QualitySlider,
+        peak3FreqSlider,
+        peak3GainSlider,
+        peak3QualitySlider,
         lowCutFreqSlider,
         highCutFreqSlider,
         lowCutSlopeSlider,
         highCutSlopeSlider; //tutaj tez dodac kolejne peaki
+
+    using APVTS = juce::AudioProcessorValueTreeState;
+    using Attachment = APVTS::SliderAttachment;
+
+    Attachment peak1FreqSliderAttachment,
+                peak1GainSliderAttachment,
+                peak1QualitySliderAttachment,
+                peak2FreqSliderAttachment,
+                peak2GainSliderAttachment,
+                peak2QualitySliderAttachment,
+                peak3FreqSliderAttachment,
+                peak3GainSliderAttachment,
+                peak3QualitySliderAttachment,
+                lowCutFreqSliderAttachment,
+                highCutFreqSliderAttachment,
+                lowCutSlopeSliderAttachment,
+                highCutSlopeSliderAttachment;
+
 
     std::vector<juce::Component*> getComps();
 

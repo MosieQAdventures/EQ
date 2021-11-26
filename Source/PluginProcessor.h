@@ -20,7 +20,9 @@ enum Slope
 
 struct ChainSettings
 {
-    float peakFreq{ 0 }, peakGainInDecibels{ 0 }, peakQuality{ 1.f };
+    float peak1Freq{ 0 }, peak1GainInDecibels{ 0 }, peak1Quality{ 1.f };
+    float peak2Freq{ 0 }, peak2GainInDecibels{ 0 }, peak2Quality{ 1.f };
+    float peak3Freq{ 0 }, peak3GainInDecibels{ 0 }, peak3Quality{ 1.f };
     float lowCutFreq{ 0 }, highCutFreq{ 0 };
 
     Slope lowCutSlope{ Slope::Slope_12 }, highCutSlope{ Slope::Slope_12 };
@@ -80,18 +82,22 @@ private:
 
     using CutFilter = juce::dsp::ProcessorChain<Filter, Filter, Filter, Filter>;
 
-    using MonoChain = juce::dsp::ProcessorChain<CutFilter, Filter, CutFilter>; //tutaj pewnie trzeba dodac 2 filtry bo jest tylko jeden parametric miedzy highpassem i lowpassem
+    using MonoChain = juce::dsp::ProcessorChain<CutFilter, Filter, Filter, Filter, CutFilter>; //tutaj pewnie trzeba dodac 2 filtry bo jest tylko jeden parametric miedzy highpassem i lowpassem
 
     MonoChain leftChain, rightChain;
 
     enum ChainPositions 
     {
         LowCut,
-        Peak, 
+        Peak1,
+        Peak2,
+        Peak3,
         HighCut 
     }; //tutaj pewnie wiecej peakow tez
 
-    void updatePeakFilter(const ChainSettings& chainSettings);
+    void updatePeak1Filter(const ChainSettings& chainSettings);
+    void updatePeak2Filter(const ChainSettings& chainSettings);
+    void updatePeak3Filter(const ChainSettings& chainSettings);
 
     using Coefficients = Filter::CoefficientsPtr;
     static void updateCoefficients(Coefficients& ld, const Coefficients& replacements);

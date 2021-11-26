@@ -214,21 +214,44 @@ ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts)
 
     settings.lowCutFreq = apvts.getRawParameterValue("LowCut Frequency")->load();
     settings.highCutFreq = apvts.getRawParameterValue("HighCut Frequency")->load();
-    settings.peakFreq = apvts.getRawParameterValue("Peak1 Frequency")->load();
-    settings.peakGainInDecibels = apvts.getRawParameterValue("Peak1 Gain")->load();
-    settings.peakQuality = apvts.getRawParameterValue("Peak1 Q")->load();
+
+    settings.peak1Freq = apvts.getRawParameterValue("Peak1 Frequency")->load();
+    settings.peak1GainInDecibels = apvts.getRawParameterValue("Peak1 Gain")->load();
+    settings.peak1Quality = apvts.getRawParameterValue("Peak1 Q")->load();
+    settings.peak2Freq = apvts.getRawParameterValue("Peak2 Frequency")->load();
+    settings.peak2GainInDecibels = apvts.getRawParameterValue("Peak2 Gain")->load();
+    settings.peak2Quality = apvts.getRawParameterValue("Peak2 Q")->load();
+    settings.peak3Freq = apvts.getRawParameterValue("Peak3 Frequency")->load();
+    settings.peak3GainInDecibels = apvts.getRawParameterValue("Peak3 Gain")->load();
+    settings.peak3Quality = apvts.getRawParameterValue("Peak3 Q")->load();
     settings.lowCutSlope = static_cast<Slope>(apvts.getRawParameterValue("LowCut Slope")->load());
     settings.highCutSlope = static_cast<Slope>(apvts.getRawParameterValue("HighCut Slope")->load());
   
     return settings;
 }
 
-void EQ_Hubert_MoszAudioProcessor::updatePeakFilter(const ChainSettings& chainSettings) 
+void EQ_Hubert_MoszAudioProcessor::updatePeak1Filter(const ChainSettings& chainSettings) 
 {
-    auto peakCoefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(), chainSettings.peakFreq, chainSettings.peakQuality, juce::Decibels::decibelsToGain(chainSettings.peakGainInDecibels));
+    auto peak1Coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(), chainSettings.peak1Freq, chainSettings.peak1Quality, juce::Decibels::decibelsToGain(chainSettings.peak1GainInDecibels));
 
-    updateCoefficients(leftChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
-    updateCoefficients(rightChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
+    updateCoefficients(leftChain.get<ChainPositions::Peak1>().coefficients, peak1Coefficients);
+    updateCoefficients(rightChain.get<ChainPositions::Peak1>().coefficients, peak1Coefficients);
+}
+
+void EQ_Hubert_MoszAudioProcessor::updatePeak2Filter(const ChainSettings& chainSettings)
+{
+    auto peak2Coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(), chainSettings.peak2Freq, chainSettings.peak2Quality, juce::Decibels::decibelsToGain(chainSettings.peak2GainInDecibels));
+
+    updateCoefficients(leftChain.get<ChainPositions::Peak2>().coefficients, peak2Coefficients);
+    updateCoefficients(rightChain.get<ChainPositions::Peak2>().coefficients, peak2Coefficients);
+}
+
+void EQ_Hubert_MoszAudioProcessor::updatePeak3Filter(const ChainSettings& chainSettings)
+{
+    auto peak3Coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(), chainSettings.peak3Freq, chainSettings.peak3Quality, juce::Decibels::decibelsToGain(chainSettings.peak3GainInDecibels));
+
+    updateCoefficients(leftChain.get<ChainPositions::Peak3>().coefficients, peak3Coefficients);
+    updateCoefficients(rightChain.get<ChainPositions::Peak3>().coefficients, peak3Coefficients);
 }
 
 void EQ_Hubert_MoszAudioProcessor::updateCoefficients(Coefficients& old, const Coefficients& replacements)
@@ -263,7 +286,9 @@ void EQ_Hubert_MoszAudioProcessor::updateFilters()
     auto chainSettings = getChainSettings(apvts);
 
     updateLowCutFilters(chainSettings);
-    updatePeakFilter(chainSettings);
+    updatePeak1Filter(chainSettings);
+    updatePeak2Filter(chainSettings);
+    updatePeak3Filter(chainSettings);
     updateHighCutFilters(chainSettings);
 }
 
@@ -276,12 +301,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout EQ_Hubert_MoszAudioProcessor
     layout.add(std::make_unique<juce::AudioParameterFloat>("HighCut Frequency", "HighCut Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.25f), 20000.f));
 
     // Peak 1
-    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak1 Frequency", "Peak1 Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.25f), 1000.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak1 Frequency", "Peak1 Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.25f), 200.f));
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak1 Gain", "Peak1 Gain", juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f), 0.0f));
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak1 Q", "Peak1 Q", juce::NormalisableRange<float>(0.1f, 10.0f, 0.05f, 1.f), 1.f));
-/*
+
     // Peak 2
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak2 Frequency", "Peak2 Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.25f), 1000.f));
 
@@ -290,12 +315,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout EQ_Hubert_MoszAudioProcessor
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak2 Q", "Peak2 Q", juce::NormalisableRange<float>(0.1f, 10.0f, 0.05f, 1.f), 1.f));
 
     // Peak 3
-    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak3 Frequency", "Peak3 Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.25f), 1000.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak3 Frequency", "Peak3 Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.25f), 2000.f));
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak3 Gain", "Peak3 Gain", juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f), 0.0f));
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak3 Q", "Peak3 Q", juce::NormalisableRange<float>(0.1f, 10.0f, 0.05f, 1.f), 1.f));
-*/
 
     juce::StringArray stringArray; //tworzenie stringow per ocave
     for (int i = 0; i < 4; i++)
