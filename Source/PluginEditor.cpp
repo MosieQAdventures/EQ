@@ -34,11 +34,24 @@ EQ_Hubert_MoszAudioProcessorEditor::EQ_Hubert_MoszAudioProcessorEditor (EQ_Huber
         addAndMakeVisible(comp);
     }
 
+    const auto& params = audioProcessor.getParameters();
+    for (auto param : params)
+    {
+        param->addListener(this);
+    }
+
+    startTimerHz(60);
+
     setSize (800, 600);
 }
 
 EQ_Hubert_MoszAudioProcessorEditor::~EQ_Hubert_MoszAudioProcessorEditor()
 {
+    const auto& params = audioProcessor.getParameters();
+    for (auto param : params)
+    {
+        param->removeListener(this);
+    }
 }
 
 //==============================================================================
@@ -175,7 +188,21 @@ void EQ_Hubert_MoszAudioProcessorEditor::timerCallback()
 {
     if (parametersChanged.compareAndSetBool(false, true))
     {
+        auto chainSettings = getChainSettings(audioProcessor.apvts);
 
+        auto peak1Coefficients = makePeak1Filter(chainSettings, audioProcessor.getSampleRate());
+        auto peak2Coefficients = makePeak2Filter(chainSettings, audioProcessor.getSampleRate());
+        auto peak3Coefficients = makePeak3Filter(chainSettings, audioProcessor.getSampleRate());
+        updateCoefficients(monoChain.get<ChainPositions::Peak1>().coefficients, peak1Coefficients);
+        updateCoefficients(monoChain.get<ChainPositions::Peak2>().coefficients, peak2Coefficients);
+        updateCoefficients(monoChain.get<ChainPositions::Peak3>().coefficients, peak3Coefficients);
+
+        auto lowCutCoefficients = makeLowCutFilter(chainSettings, audioProcessor.getSampleRate());
+        auto highCutCoefficients = makeHighCutFilter(chainSettings, audioProcessor.getSampleRate());
+        updateCutFilter(monoChain.get<ChainPositions::LowCut>(), lowCutCoefficients, chainSettings.lowCutSlope);
+        updateCutFilter(monoChain.get<ChainPositions::HighCut>(), highCutCoefficients, chainSettings.highCutSlope);
+
+        repaint();
     }
 }
 
