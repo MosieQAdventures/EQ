@@ -47,9 +47,83 @@ void EQ_Hubert_MoszAudioProcessorEditor::paint (juce::Graphics& g)
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
 
-    g.setColour (juce::Colours::white);
-    g.setFont (10.0f);
-    g.drawFittedText ("Parameter!", getLocalBounds(), juce::Justification::centred, 1);
+    auto bounds = getLocalBounds();
+    auto responseArea = bounds.removeFromTop(bounds.getHeight() * 0.50);
+    auto outputGainArea = responseArea.removeFromRight(responseArea.getWidth() * 0.1);
+
+    //V to najwyzej zakomentowac V
+    responseArea.removeFromTop(responseArea.getHeight() * 0.02);
+    responseArea.removeFromBottom(responseArea.getHeight() * 0.02);
+    responseArea.removeFromLeft(responseArea.getWidth() * 0.02);
+
+    auto w = responseArea.getWidth();
+
+    auto& lowcut = monoChain.get<ChainPositions::LowCut>();
+    auto& highcut = monoChain.get<ChainPositions::HighCut>();
+    auto& peak1 = monoChain.get<ChainPositions::Peak1>();
+    auto& peak2 = monoChain.get<ChainPositions::Peak2>();
+    auto& peak3 = monoChain.get<ChainPositions::Peak3>();
+
+    auto sampleRate = audioProcessor.getSampleRate();
+
+    std::vector<double> mags;
+
+    mags.resize(w);
+
+    for (int i = 0; i < w; i++)
+    {
+        double mag = 1.f;
+        auto freq = juce::mapToLog10(double(i) / double(w), 20.0, 20000.0);
+
+        if (!monoChain.isBypassed<ChainPositions::Peak1>())
+            mag *= peak1.coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        if (!monoChain.isBypassed<ChainPositions::Peak2>())
+            mag *= peak2.coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        if (!monoChain.isBypassed<ChainPositions::Peak3>())
+            mag *= peak3.coefficients->getMagnitudeForFrequency(freq, sampleRate);
+
+        if (!lowcut.isBypassed<0>())
+            mag *= lowcut.get<0>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        if (!lowcut.isBypassed<1>())
+            mag *= lowcut.get<1>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        if (!lowcut.isBypassed<2>())
+            mag *= lowcut.get<2>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        if (!lowcut.isBypassed<3>())
+            mag *= lowcut.get<3>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+
+        if (!highcut.isBypassed<0>())
+            mag *= highcut.get<0>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        if (!highcut.isBypassed<1>())
+            mag *= highcut.get<1>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        if (!highcut.isBypassed<2>())
+            mag *= highcut.get<2>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        if (!highcut.isBypassed<3>())
+            mag *= highcut.get<3>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+
+        mags[i] = juce::Decibels::gainToDecibels(mag);
+    }
+
+    juce::Path responseCurve;
+
+    const double outputMin = responseArea.getBottom();
+    const double outputMax = responseArea.getY();
+    auto map = [outputMin, outputMax](double input)
+    {
+        return juce::jmap(input, -24.0, 24.0, outputMin, outputMax);
+    };
+
+    responseCurve.startNewSubPath(responseArea.getX(), map(mags.front()));
+    for (size_t i = 1; i < mags.size(); i++)
+    {
+        responseCurve.lineTo(responseArea.getX() + i, map(mags[i]));
+    }
+
+    g.setColour(juce::Colours::black);
+    g.drawRoundedRectangle(responseArea.toFloat(), 4.f, 2.f);
+
+    g.setColour(juce::Colours::white);
+    g.strokePath(responseCurve, juce::PathStrokeType(3.f));
+
 }
 
 void EQ_Hubert_MoszAudioProcessorEditor::resized()
@@ -59,6 +133,8 @@ void EQ_Hubert_MoszAudioProcessorEditor::resized()
 
     auto bounds = getLocalBounds();
     auto responseArea = bounds.removeFromTop(bounds.getHeight() * 0.50);
+    auto outputGainArea = responseArea.removeFromRight(responseArea.getWidth() * 0.1);
+
     auto lowCutArea = bounds.removeFromLeft(bounds.getWidth() * 0.25);
     auto highCutArea = bounds.removeFromRight(bounds.getWidth() * 0.33);
     auto peak1Area = bounds.removeFromLeft(bounds.getWidth() * 0.33);

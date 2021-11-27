@@ -38,18 +38,18 @@ private:
     EQ_Hubert_MoszAudioProcessor& audioProcessor;
 
     CustomRotarySlider peak1FreqSlider,
-        peak1GainSlider,
-        peak1QualitySlider,
-        peak2FreqSlider,
-        peak2GainSlider,
-        peak2QualitySlider,
-        peak3FreqSlider,
-        peak3GainSlider,
-        peak3QualitySlider,
-        lowCutFreqSlider,
-        highCutFreqSlider,
-        lowCutSlopeSlider,
-        highCutSlopeSlider; //tutaj tez dodac kolejne peaki
+                        peak1GainSlider,
+                        peak1QualitySlider,
+                        peak2FreqSlider,
+                        peak2GainSlider,
+                        peak2QualitySlider,
+                        peak3FreqSlider,
+                        peak3GainSlider,
+                        peak3QualitySlider,
+                        lowCutFreqSlider,
+                        highCutFreqSlider,
+                        lowCutSlopeSlider,
+                        highCutSlopeSlider; 
 
     using APVTS = juce::AudioProcessorValueTreeState;
     using Attachment = APVTS::SliderAttachment;
@@ -70,6 +70,8 @@ private:
 
 
     std::vector<juce::Component*> getComps();
+
+    MonoChain monoChain;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EQ_Hubert_MoszAudioProcessorEditor)
 };
