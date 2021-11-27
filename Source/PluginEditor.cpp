@@ -49,12 +49,12 @@ void EQ_Hubert_MoszAudioProcessorEditor::paint (juce::Graphics& g)
 
     auto bounds = getLocalBounds();
     auto responseArea = bounds.removeFromTop(bounds.getHeight() * 0.50);
-    auto outputGainArea = responseArea.removeFromRight(responseArea.getWidth() * 0.1);
+    auto outputGainArea = responseArea.removeFromRight(responseArea.getWidth() * 0.15);
 
     //V to najwyzej zakomentowac V
     responseArea.removeFromTop(responseArea.getHeight() * 0.02);
     responseArea.removeFromBottom(responseArea.getHeight() * 0.02);
-    responseArea.removeFromLeft(responseArea.getWidth() * 0.02);
+    responseArea.removeFromLeft(responseArea.getWidth() * 0.05);
 
     auto w = responseArea.getWidth();
 
@@ -133,7 +133,12 @@ void EQ_Hubert_MoszAudioProcessorEditor::resized()
 
     auto bounds = getLocalBounds();
     auto responseArea = bounds.removeFromTop(bounds.getHeight() * 0.50);
-    auto outputGainArea = responseArea.removeFromRight(responseArea.getWidth() * 0.1);
+    auto outputGainArea = responseArea.removeFromRight(responseArea.getWidth() * 0.15);
+
+    //V to najwyzej zakomentowac V
+    responseArea.removeFromTop(responseArea.getHeight() * 0.02);
+    responseArea.removeFromBottom(responseArea.getHeight() * 0.02);
+    responseArea.removeFromLeft(responseArea.getWidth() * 0.05);
 
     auto lowCutArea = bounds.removeFromLeft(bounds.getWidth() * 0.25);
     auto highCutArea = bounds.removeFromRight(bounds.getWidth() * 0.33);
@@ -158,9 +163,20 @@ void EQ_Hubert_MoszAudioProcessorEditor::resized()
     peak3GainSlider.setBounds(peak3Area.removeFromTop(peak3Area.getHeight() * 0.5));
     peak3QualitySlider.setBounds(peak3Area);
 
-    //peak2, peak3
-
     //13634 - 13.11 - 14:10
+}
+
+void EQ_Hubert_MoszAudioProcessorEditor::parameterValueChanged(int parameterIndex, float newValue)
+{
+    parametersChanged.set(true);
+}
+
+void EQ_Hubert_MoszAudioProcessorEditor::timerCallback()
+{
+    if (parametersChanged.compareAndSetBool(false, true))
+    {
+
+    }
 }
 
 std::vector<juce::Component*> EQ_Hubert_MoszAudioProcessorEditor::getComps()

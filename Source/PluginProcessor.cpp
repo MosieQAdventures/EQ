@@ -230,9 +230,33 @@ ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts)
     return settings;
 }
 
+Coefficients makePeak1Filter(const ChainSettings& chainSettings, double sampleRate)
+{
+    return juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate,
+        chainSettings.peak1Freq,
+        chainSettings.peak1Quality,
+        juce::Decibels::decibelsToGain(chainSettings.peak1GainInDecibels));
+}
+
+Coefficients makePeak2Filter(const ChainSettings& chainSettings, double sampleRate)
+{
+    return juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate,
+        chainSettings.peak2Freq,
+        chainSettings.peak2Quality,
+        juce::Decibels::decibelsToGain(chainSettings.peak2GainInDecibels));
+}
+
+Coefficients makePeak3Filter(const ChainSettings& chainSettings, double sampleRate)
+{
+    return juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate,
+        chainSettings.peak3Freq,
+        chainSettings.peak3Quality,
+        juce::Decibels::decibelsToGain(chainSettings.peak3GainInDecibels));
+}
+
 void EQ_Hubert_MoszAudioProcessor::updatePeak1Filter(const ChainSettings& chainSettings) 
 {
-    auto peak1Coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(), chainSettings.peak1Freq, chainSettings.peak1Quality, juce::Decibels::decibelsToGain(chainSettings.peak1GainInDecibels));
+    auto peak1Coefficients = makePeak1Filter(chainSettings, getSampleRate());
 
     updateCoefficients(leftChain.get<ChainPositions::Peak1>().coefficients, peak1Coefficients);
     updateCoefficients(rightChain.get<ChainPositions::Peak1>().coefficients, peak1Coefficients);
@@ -240,7 +264,7 @@ void EQ_Hubert_MoszAudioProcessor::updatePeak1Filter(const ChainSettings& chainS
 
 void EQ_Hubert_MoszAudioProcessor::updatePeak2Filter(const ChainSettings& chainSettings)
 {
-    auto peak2Coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(), chainSettings.peak2Freq, chainSettings.peak2Quality, juce::Decibels::decibelsToGain(chainSettings.peak2GainInDecibels));
+    auto peak2Coefficients = makePeak2Filter(chainSettings, getSampleRate());
 
     updateCoefficients(leftChain.get<ChainPositions::Peak2>().coefficients, peak2Coefficients);
     updateCoefficients(rightChain.get<ChainPositions::Peak2>().coefficients, peak2Coefficients);
@@ -248,13 +272,13 @@ void EQ_Hubert_MoszAudioProcessor::updatePeak2Filter(const ChainSettings& chainS
 
 void EQ_Hubert_MoszAudioProcessor::updatePeak3Filter(const ChainSettings& chainSettings)
 {
-    auto peak3Coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(), chainSettings.peak3Freq, chainSettings.peak3Quality, juce::Decibels::decibelsToGain(chainSettings.peak3GainInDecibels));
+    auto peak3Coefficients = makePeak3Filter(chainSettings, getSampleRate());
 
     updateCoefficients(leftChain.get<ChainPositions::Peak3>().coefficients, peak3Coefficients);
     updateCoefficients(rightChain.get<ChainPositions::Peak3>().coefficients, peak3Coefficients);
 }
 
-void EQ_Hubert_MoszAudioProcessor::updateCoefficients(Coefficients& old, const Coefficients& replacements)
+void updateCoefficients(Coefficients & old, const Coefficients & replacements)
 {
     *old = *replacements;
 }
