@@ -9,31 +9,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-//==============================================================================
-EQ_Hubert_MoszAudioProcessorEditor::EQ_Hubert_MoszAudioProcessorEditor (EQ_Hubert_MoszAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p), 
-    peak1FreqSliderAttachment(audioProcessor.apvts, "Peak1 Frequency", peak1FreqSlider),
-    peak1GainSliderAttachment(audioProcessor.apvts, "Peak1 Gain", peak1GainSlider),
-    peak1QualitySliderAttachment(audioProcessor.apvts, "Peak1 Q", peak1QualitySlider),
-    peak2FreqSliderAttachment(audioProcessor.apvts, "Peak2 Frequency", peak2FreqSlider),
-    peak2GainSliderAttachment(audioProcessor.apvts, "Peak2 Gain", peak2GainSlider),
-    peak2QualitySliderAttachment(audioProcessor.apvts, "Peak2 Q", peak2QualitySlider),
-    peak3FreqSliderAttachment(audioProcessor.apvts, "Peak3 Frequency", peak3FreqSlider),
-    peak3GainSliderAttachment(audioProcessor.apvts, "Peak3 Gain", peak3GainSlider),
-    peak3QualitySliderAttachment(audioProcessor.apvts, "Peak3 Q", peak3QualitySlider),
-    lowCutSlopeSliderAttachment(audioProcessor.apvts, "LowCut Slope", lowCutSlopeSlider),
-    lowCutFreqSliderAttachment(audioProcessor.apvts, "LowCut Frequency", lowCutFreqSlider),
-    highCutSlopeSliderAttachment(audioProcessor.apvts, "HighCut Slope", highCutSlopeSlider),
-    highCutFreqSliderAttachment(audioProcessor.apvts, "HighCut Frequency", highCutFreqSlider)
+ResponseCurveComponent::ResponseCurveComponent(EQ_Hubert_MoszAudioProcessor& p) : audioProcessor(p)
 {
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-
-    for (auto* comp : getComps())
-    {
-        addAndMakeVisible(comp);
-    }
-
     const auto& params = audioProcessor.getParameters();
     for (auto param : params)
     {
@@ -41,11 +18,9 @@ EQ_Hubert_MoszAudioProcessorEditor::EQ_Hubert_MoszAudioProcessorEditor (EQ_Huber
     }
 
     startTimerHz(60);
-
-    setSize (800, 600);
 }
 
-EQ_Hubert_MoszAudioProcessorEditor::~EQ_Hubert_MoszAudioProcessorEditor()
+ResponseCurveComponent::~ResponseCurveComponent()
 {
     const auto& params = audioProcessor.getParameters();
     for (auto param : params)
@@ -54,20 +29,40 @@ EQ_Hubert_MoszAudioProcessorEditor::~EQ_Hubert_MoszAudioProcessorEditor()
     }
 }
 
-//==============================================================================
-void EQ_Hubert_MoszAudioProcessorEditor::paint (juce::Graphics& g)
+void ResponseCurveComponent::parameterValueChanged(int parameterIndex, float newValue)
+{
+    parametersChanged.set(true);
+}
+
+void ResponseCurveComponent::timerCallback()
+{
+    if (parametersChanged.compareAndSetBool(false, true))
+    {
+        auto chainSettings = getChainSettings(audioProcessor.apvts);
+
+        auto peak1Coefficients = makePeak1Filter(chainSettings, audioProcessor.getSampleRate());
+        auto peak2Coefficients = makePeak2Filter(chainSettings, audioProcessor.getSampleRate());
+        auto peak3Coefficients = makePeak3Filter(chainSettings, audioProcessor.getSampleRate());
+        updateCoefficients(monoChain.get<ChainPositions::Peak1>().coefficients, peak1Coefficients);
+        updateCoefficients(monoChain.get<ChainPositions::Peak2>().coefficients, peak2Coefficients);
+        updateCoefficients(monoChain.get<ChainPositions::Peak3>().coefficients, peak3Coefficients);
+
+        auto lowCutCoefficients = makeLowCutFilter(chainSettings, audioProcessor.getSampleRate());
+        auto highCutCoefficients = makeHighCutFilter(chainSettings, audioProcessor.getSampleRate());
+        updateCutFilter(monoChain.get<ChainPositions::LowCut>(), lowCutCoefficients, chainSettings.lowCutSlope);
+        updateCutFilter(monoChain.get<ChainPositions::HighCut>(), highCutCoefficients, chainSettings.highCutSlope);
+
+        repaint();
+    }
+}
+
+void ResponseCurveComponent::paint(juce::Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+    g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
 
-    auto bounds = getLocalBounds();
-    auto responseArea = bounds.removeFromTop(bounds.getHeight() * 0.50);
+    auto responseArea = getLocalBounds();
     auto outputGainArea = responseArea.removeFromRight(responseArea.getWidth() * 0.15);
-
-    //V to najwyzej zakomentowac V
-    responseArea.removeFromTop(responseArea.getHeight() * 0.02);
-    responseArea.removeFromBottom(responseArea.getHeight() * 0.02);
-    responseArea.removeFromLeft(responseArea.getWidth() * 0.05);
 
     auto w = responseArea.getWidth();
 
@@ -139,6 +134,48 @@ void EQ_Hubert_MoszAudioProcessorEditor::paint (juce::Graphics& g)
 
 }
 
+//==============================================================================
+EQ_Hubert_MoszAudioProcessorEditor::EQ_Hubert_MoszAudioProcessorEditor (EQ_Hubert_MoszAudioProcessor& p)
+    : AudioProcessorEditor (&p), audioProcessor (p), 
+    responseCurveComponent(audioProcessor),
+    peak1FreqSliderAttachment(audioProcessor.apvts, "Peak1 Frequency", peak1FreqSlider),
+    peak1GainSliderAttachment(audioProcessor.apvts, "Peak1 Gain", peak1GainSlider),
+    peak1QualitySliderAttachment(audioProcessor.apvts, "Peak1 Q", peak1QualitySlider),
+    peak2FreqSliderAttachment(audioProcessor.apvts, "Peak2 Frequency", peak2FreqSlider),
+    peak2GainSliderAttachment(audioProcessor.apvts, "Peak2 Gain", peak2GainSlider),
+    peak2QualitySliderAttachment(audioProcessor.apvts, "Peak2 Q", peak2QualitySlider),
+    peak3FreqSliderAttachment(audioProcessor.apvts, "Peak3 Frequency", peak3FreqSlider),
+    peak3GainSliderAttachment(audioProcessor.apvts, "Peak3 Gain", peak3GainSlider),
+    peak3QualitySliderAttachment(audioProcessor.apvts, "Peak3 Q", peak3QualitySlider),
+    lowCutSlopeSliderAttachment(audioProcessor.apvts, "LowCut Slope", lowCutSlopeSlider),
+    lowCutFreqSliderAttachment(audioProcessor.apvts, "LowCut Frequency", lowCutFreqSlider),
+    highCutSlopeSliderAttachment(audioProcessor.apvts, "HighCut Slope", highCutSlopeSlider),
+    highCutFreqSliderAttachment(audioProcessor.apvts, "HighCut Frequency", highCutFreqSlider)
+{
+    // Make sure that before the constructor has finished, you've set the
+    // editor's size to whatever you need it to be.
+
+    for (auto* comp : getComps())
+    {
+        addAndMakeVisible(comp);
+    }
+
+    setSize (800, 600);
+}
+
+EQ_Hubert_MoszAudioProcessorEditor::~EQ_Hubert_MoszAudioProcessorEditor()
+{
+   
+}
+
+//==============================================================================
+void EQ_Hubert_MoszAudioProcessorEditor::paint (juce::Graphics& g)
+{
+    // (Our component is opaque, so we must completely fill the background with a solid colour)
+    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+
+}
+
 void EQ_Hubert_MoszAudioProcessorEditor::resized()
 {
     // This is generally where you'll want to lay out the positions of any
@@ -152,6 +189,8 @@ void EQ_Hubert_MoszAudioProcessorEditor::resized()
     responseArea.removeFromTop(responseArea.getHeight() * 0.02);
     responseArea.removeFromBottom(responseArea.getHeight() * 0.02);
     responseArea.removeFromLeft(responseArea.getWidth() * 0.05);
+
+    responseCurveComponent.setBounds(responseArea);
 
     auto lowCutArea = bounds.removeFromLeft(bounds.getWidth() * 0.25);
     auto highCutArea = bounds.removeFromRight(bounds.getWidth() * 0.33);
@@ -179,33 +218,6 @@ void EQ_Hubert_MoszAudioProcessorEditor::resized()
     //13634 - 13.11 - 14:10
 }
 
-void EQ_Hubert_MoszAudioProcessorEditor::parameterValueChanged(int parameterIndex, float newValue)
-{
-    parametersChanged.set(true);
-}
-
-void EQ_Hubert_MoszAudioProcessorEditor::timerCallback()
-{
-    if (parametersChanged.compareAndSetBool(false, true))
-    {
-        auto chainSettings = getChainSettings(audioProcessor.apvts);
-
-        auto peak1Coefficients = makePeak1Filter(chainSettings, audioProcessor.getSampleRate());
-        auto peak2Coefficients = makePeak2Filter(chainSettings, audioProcessor.getSampleRate());
-        auto peak3Coefficients = makePeak3Filter(chainSettings, audioProcessor.getSampleRate());
-        updateCoefficients(monoChain.get<ChainPositions::Peak1>().coefficients, peak1Coefficients);
-        updateCoefficients(monoChain.get<ChainPositions::Peak2>().coefficients, peak2Coefficients);
-        updateCoefficients(monoChain.get<ChainPositions::Peak3>().coefficients, peak3Coefficients);
-
-        auto lowCutCoefficients = makeLowCutFilter(chainSettings, audioProcessor.getSampleRate());
-        auto highCutCoefficients = makeHighCutFilter(chainSettings, audioProcessor.getSampleRate());
-        updateCutFilter(monoChain.get<ChainPositions::LowCut>(), lowCutCoefficients, chainSettings.lowCutSlope);
-        updateCutFilter(monoChain.get<ChainPositions::HighCut>(), highCutCoefficients, chainSettings.highCutSlope);
-
-        repaint();
-    }
-}
-
 std::vector<juce::Component*> EQ_Hubert_MoszAudioProcessorEditor::getComps()
 {
     return
@@ -222,6 +234,7 @@ std::vector<juce::Component*> EQ_Hubert_MoszAudioProcessorEditor::getComps()
         &lowCutFreqSlider,
         &highCutFreqSlider,
         &lowCutSlopeSlider,
-        &highCutSlopeSlider
+        &highCutSlopeSlider,
+        &responseCurveComponent
     };
 }
