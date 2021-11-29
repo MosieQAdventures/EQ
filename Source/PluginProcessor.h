@@ -24,6 +24,7 @@ struct ChainSettings
     float peak2Freq{ 0 }, peak2GainInDecibels{ 0 }, peak2Quality{ 1.f };
     float peak3Freq{ 0 }, peak3GainInDecibels{ 0 }, peak3Quality{ 1.f };
     float lowCutFreq{ 0 }, highCutFreq{ 0 };
+    float outputGain{ 0 };
 
     Slope lowCutSlope{ Slope::Slope_12 }, highCutSlope{ Slope::Slope_12 };
 };
@@ -34,7 +35,9 @@ using Filter = juce::dsp::IIR::Filter<float>;
 
 using CutFilter = juce::dsp::ProcessorChain<Filter, Filter, Filter, Filter>;
 
-using MonoChain = juce::dsp::ProcessorChain<CutFilter, Filter, Filter, Filter, CutFilter>;
+using Gain = juce::dsp::Gain<float>;
+
+using MonoChain = juce::dsp::ProcessorChain<CutFilter, Filter, Filter, Filter, CutFilter/*, Gain*/>;
 
 enum ChainPositions
 {
@@ -42,7 +45,8 @@ enum ChainPositions
     Peak1,
     Peak2,
     Peak3,
-    HighCut
+    HighCut/*,
+    OutputGain*/
 };
 
 using Coefficients = Filter::CoefficientsPtr;
@@ -160,13 +164,21 @@ private:
     void updatePeak2Filter(const ChainSettings& chainSettings);
     void updatePeak3Filter(const ChainSettings& chainSettings);
 
-
-
-
     void updateLowCutFilters(const ChainSettings& chainSettings);
     void updateHighCutFilters(const ChainSettings& chainSettings);
 
     void updateFilters();
+
+    /*Gain outputGain;
+    juce::AudioParameterFloat* outputGainParam{ nullptr };
+
+    template<typename T, typename U>
+    void applyGain(T& buffer, U& gain)
+    {
+        auto block = juce::dsp::AudioBlock<float>(buffer);
+        auto ctx = juce::dsp::ProcessContextReplacing<float>(block);
+        gain.process(ctx);
+    }*/
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EQ_Hubert_MoszAudioProcessor)

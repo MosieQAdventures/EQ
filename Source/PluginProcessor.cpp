@@ -22,6 +22,7 @@ EQ_Hubert_MoszAudioProcessor::EQ_Hubert_MoszAudioProcessor()
                        )
 #endif
 {
+    //outputGain = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter("Output Gain"));
 }
 
 EQ_Hubert_MoszAudioProcessor::~EQ_Hubert_MoszAudioProcessor()
@@ -104,10 +105,14 @@ void EQ_Hubert_MoszAudioProcessor::prepareToPlay (double sampleRate, int samples
 
     spec.sampleRate = sampleRate;
 
+    /*outputGain.prepare(spec);
+    outputGain.setRampDurationSeconds(0.05);*/
+
     leftChain.prepare(spec);
     rightChain.prepare(spec);
 
     updateFilters();
+
 }
 
 void EQ_Hubert_MoszAudioProcessor::releaseResources()
@@ -158,8 +163,13 @@ void EQ_Hubert_MoszAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
         buffer.clear (i, 0, buffer.getNumSamples());
 
     updateFilters();
+    
+    //outputGain.setGainDecibels(outputGainParam->get());
 
     juce::dsp::AudioBlock<float> block(buffer);
+    //auto context = juce::dsp::ProcessContextReplacing<float>(block);
+
+    auto chainSettings_2 = getChainSettings(apvts);
 
     auto leftBlock = block.getSingleChannelBlock(0);
     auto rightBlock = block.getSingleChannelBlock(1);
@@ -170,6 +180,7 @@ void EQ_Hubert_MoszAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
     leftChain.process(leftContext);
     rightChain.process(rightContext);
 
+    //applyGain(buffer, outputGain);
 }
 
 //==============================================================================
@@ -226,6 +237,8 @@ ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts)
     settings.peak3Quality = apvts.getRawParameterValue("Peak3 Q")->load();
     settings.lowCutSlope = static_cast<Slope>(apvts.getRawParameterValue("LowCut Slope")->load());
     settings.highCutSlope = static_cast<Slope>(apvts.getRawParameterValue("HighCut Slope")->load());
+
+    settings.outputGain = apvts.getRawParameterValue("Output Gain")->load();
   
     return settings;
 }
@@ -329,21 +342,21 @@ juce::AudioProcessorValueTreeState::ParameterLayout EQ_Hubert_MoszAudioProcessor
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak1 Gain", "Peak1 Gain", juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f), 0.0f));
 
-    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak1 Q", "Peak1 Q", juce::NormalisableRange<float>(0.1f, 10.0f, 0.05f, 1.f), 1.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak1 Q", "Peak1 Q", juce::NormalisableRange<float>(0.1f, 10.0f, 0.05f, 0.29f), 1.f));
 
     // Peak 2
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak2 Frequency", "Peak2 Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.25f), 1000.f));
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak2 Gain", "Peak2 Gain", juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f), 0.0f));
 
-    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak2 Q", "Peak2 Q", juce::NormalisableRange<float>(0.1f, 10.0f, 0.05f, 1.f), 1.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak2 Q", "Peak2 Q", juce::NormalisableRange<float>(0.1f, 10.0f, 0.05f, 0.29f), 1.f));
 
     // Peak 3
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak3 Frequency", "Peak3 Frequency", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.25f), 2000.f));
 
     layout.add(std::make_unique<juce::AudioParameterFloat>("Peak3 Gain", "Peak3 Gain", juce::NormalisableRange<float>(-24.f, 24.f, 0.1f, 1.f), 0.0f));
 
-    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak3 Q", "Peak3 Q", juce::NormalisableRange<float>(0.1f, 10.0f, 0.05f, 1.f), 1.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak3 Q", "Peak3 Q", juce::NormalisableRange<float>(0.1f, 10.0f, 0.05f, 0.29f), 1.f));
 
     juce::StringArray stringArray; //tworzenie stringow per ocave
     for (int i = 0; i < 4; i++)
@@ -357,6 +370,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout EQ_Hubert_MoszAudioProcessor
     layout.add(std::make_unique<juce::AudioParameterChoice>("LowCut Slope", "LowCut Slope", stringArray, 0));
 
     layout.add(std::make_unique<juce::AudioParameterChoice>("HighCut Slope", "HighCut Slope", stringArray, 0));
+
+    //-------
+
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Output Gain", "Output Gain", juce::NormalisableRange<float>(-12.f, 12.f, 0.1f, 1.f), 0.0f));
 
     return layout;
 }

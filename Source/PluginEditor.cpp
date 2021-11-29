@@ -62,7 +62,6 @@ void ResponseCurveComponent::paint(juce::Graphics& g)
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
 
     auto responseArea = getLocalBounds();
-    auto outputGainArea = responseArea.removeFromRight(responseArea.getWidth() * 0.15);
 
     auto w = responseArea.getWidth();
 
@@ -126,7 +125,7 @@ void ResponseCurveComponent::paint(juce::Graphics& g)
         responseCurve.lineTo(responseArea.getX() + i, map(mags[i]));
     }
 
-    g.setColour(juce::Colours::black);
+    g.setColour(juce::Colours::white);
     g.drawRoundedRectangle(responseArea.toFloat(), 4.f, 2.f);
 
     g.setColour(juce::Colours::white);
@@ -137,7 +136,24 @@ void ResponseCurveComponent::paint(juce::Graphics& g)
 //==============================================================================
 EQ_Hubert_MoszAudioProcessorEditor::EQ_Hubert_MoszAudioProcessorEditor (EQ_Hubert_MoszAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p), 
+
+    peak1FreqSlider(*audioProcessor.apvts.getParameter("Peak1 Frequency"), "Hz"),
+    peak1GainSlider(*audioProcessor.apvts.getParameter("Peak1 Gain"), "dB"),
+    peak1QualitySlider(*audioProcessor.apvts.getParameter("Peak1 Q"), ""),
+    peak2FreqSlider(*audioProcessor.apvts.getParameter("Peak2 Frequency"), "Hz"),
+    peak2GainSlider(*audioProcessor.apvts.getParameter("Peak2 Gain"), "dB"),
+    peak2QualitySlider(*audioProcessor.apvts.getParameter("Peak2 Q"), ""),
+    peak3FreqSlider(*audioProcessor.apvts.getParameter("Peak3 Frequency"), "Hz"),
+    peak3GainSlider(*audioProcessor.apvts.getParameter("Peak3 Gain"), "dB"),
+    peak3QualitySlider(*audioProcessor.apvts.getParameter("Peak3 Q"), ""),
+    lowCutSlopeSlider(*audioProcessor.apvts.getParameter("LowCut Slope"), "dB/Oct"),
+    lowCutFreqSlider(*audioProcessor.apvts.getParameter("LowCut Frequency"), "Hz"),
+    highCutSlopeSlider(*audioProcessor.apvts.getParameter("HighCut Slope"), "db/Oct"),
+    highCutFreqSlider(*audioProcessor.apvts.getParameter("HighCut Frequency"), "Hz"),
+    outputGainSlider(*audioProcessor.apvts.getParameter("Output Gain"), "dB"),
+
     responseCurveComponent(audioProcessor),
+
     peak1FreqSliderAttachment(audioProcessor.apvts, "Peak1 Frequency", peak1FreqSlider),
     peak1GainSliderAttachment(audioProcessor.apvts, "Peak1 Gain", peak1GainSlider),
     peak1QualitySliderAttachment(audioProcessor.apvts, "Peak1 Q", peak1QualitySlider),
@@ -150,7 +166,8 @@ EQ_Hubert_MoszAudioProcessorEditor::EQ_Hubert_MoszAudioProcessorEditor (EQ_Huber
     lowCutSlopeSliderAttachment(audioProcessor.apvts, "LowCut Slope", lowCutSlopeSlider),
     lowCutFreqSliderAttachment(audioProcessor.apvts, "LowCut Frequency", lowCutFreqSlider),
     highCutSlopeSliderAttachment(audioProcessor.apvts, "HighCut Slope", highCutSlopeSlider),
-    highCutFreqSliderAttachment(audioProcessor.apvts, "HighCut Frequency", highCutFreqSlider)
+    highCutFreqSliderAttachment(audioProcessor.apvts, "HighCut Frequency", highCutFreqSlider),
+    outputGainSliderAttachment(audioProcessor.apvts, "Output Gain", outputGainSlider)
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
@@ -183,17 +200,20 @@ void EQ_Hubert_MoszAudioProcessorEditor::resized()
 
     auto bounds = getLocalBounds();
     auto responseArea = bounds.removeFromTop(bounds.getHeight() * 0.50);
-    auto outputGainArea = responseArea.removeFromRight(responseArea.getWidth() * 0.15);
 
     //V to najwyzej zakomentowac V
     responseArea.removeFromTop(responseArea.getHeight() * 0.02);
     responseArea.removeFromBottom(responseArea.getHeight() * 0.02);
-    responseArea.removeFromLeft(responseArea.getWidth() * 0.05);
+    responseArea.removeFromLeft(responseArea.getWidth() * 0.02);
+    responseArea.removeFromRight(responseArea.getWidth() * 0.02);
 
     responseCurveComponent.setBounds(responseArea);
 
-    auto lowCutArea = bounds.removeFromLeft(bounds.getWidth() * 0.25);
-    auto highCutArea = bounds.removeFromRight(bounds.getWidth() * 0.33);
+    auto logoArea = bounds.removeFromRight(bounds.getWidth() * 0.15);
+    auto outputGainArea = logoArea.removeFromTop(logoArea.getHeight() * 0.5);
+
+    auto lowCutArea = bounds.removeFromLeft(bounds.getWidth() * 0.2);
+    auto highCutArea = bounds.removeFromRight(bounds.getWidth() * 0.25);
     auto peak1Area = bounds.removeFromLeft(bounds.getWidth() * 0.33);
     auto peak2Area = bounds.removeFromLeft(bounds.getWidth() * 0.5);
     auto peak3Area = bounds;
@@ -203,17 +223,19 @@ void EQ_Hubert_MoszAudioProcessorEditor::resized()
     highCutFreqSlider.setBounds(highCutArea.removeFromTop(highCutArea.getHeight() * 0.5));
     highCutSlopeSlider.setBounds(highCutArea);
 
-    peak1FreqSlider.setBounds(peak1Area.removeFromTop(peak1Area.getHeight() * 0.33));
-    peak1GainSlider.setBounds(peak1Area.removeFromTop(peak1Area.getHeight() * 0.5));
+    peak1FreqSlider.setBounds(peak1Area.removeFromTop(peak1Area.getHeight() * 0.5));
+    peak1GainSlider.setBounds(peak1Area.removeFromLeft(peak1Area.getWidth() * 0.5));
     peak1QualitySlider.setBounds(peak1Area);
 
-    peak2FreqSlider.setBounds(peak2Area.removeFromTop(peak2Area.getHeight() * 0.33));
-    peak2GainSlider.setBounds(peak2Area.removeFromTop(peak2Area.getHeight() * 0.5));
+    peak2FreqSlider.setBounds(peak2Area.removeFromTop(peak2Area.getHeight() * 0.5));
+    peak2GainSlider.setBounds(peak2Area.removeFromLeft(peak2Area.getWidth() * 0.5));
     peak2QualitySlider.setBounds(peak2Area);
 
-    peak3FreqSlider.setBounds(peak3Area.removeFromTop(peak3Area.getHeight() * 0.33));
-    peak3GainSlider.setBounds(peak3Area.removeFromTop(peak3Area.getHeight() * 0.5));
+    peak3FreqSlider.setBounds(peak3Area.removeFromTop(peak3Area.getHeight() * 0.5));
+    peak3GainSlider.setBounds(peak3Area.removeFromLeft(peak3Area.getWidth() * 0.5));
     peak3QualitySlider.setBounds(peak3Area);
+
+    outputGainSlider.setBounds(outputGainArea);
 
     //13634 - 13.11 - 14:10
 }
@@ -235,6 +257,7 @@ std::vector<juce::Component*> EQ_Hubert_MoszAudioProcessorEditor::getComps()
         &highCutFreqSlider,
         &lowCutSlopeSlider,
         &highCutSlopeSlider,
-        &responseCurveComponent
+        &responseCurveComponent,
+        &outputGainSlider
     };
 }
