@@ -9,6 +9,69 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+void LookAndFeel::drawRotarySlider(juce::Graphics& g,
+    int x,
+    int y,
+    int width,
+    int height,
+    float sliderPosProportional,
+    float rotaryStartAngle,
+    float rotaryEndAngle,
+    juce::Slider& slider)
+{
+    using namespace juce;
+
+    auto bounds = Rectangle<float>(x, y, width, height);
+
+
+
+}
+//============================================================
+void RotarySliderWithLabels::paint(juce::Graphics& g)
+{
+    using namespace juce;
+
+    auto startAng = degreesToRadians(180.f + 45.f);
+    auto endAng = degreesToRadians(180.f - 45.f) + MathConstants<float>::twoPi;
+
+    auto range = getRange();
+
+    auto sliderBounds = getSliderBounds();
+
+    g.setColour(Colours::red);
+    //g.drawRect(getLocalBounds());
+    g.setColour(Colours::white);
+    g.drawRoundedRectangle(sliderBounds.toFloat(), 3.f, 3.f);
+
+    getLookAndFeel().drawRotarySlider(g,
+                                      sliderBounds.getX(),
+                                      sliderBounds.getY(),
+                                      sliderBounds.getWidth(),
+                                      sliderBounds.getHeight(),
+                                      jmap(getValue(), range.getStart(), range.getEnd(), 0.0, 1.0),
+                                      startAng,
+                                      endAng,
+                                      *this);
+
+}
+
+juce::Rectangle<int> RotarySliderWithLabels::getSliderBounds() const
+{
+    auto bounds = getLocalBounds();
+
+    auto size = juce::jmin(bounds.getWidth(), bounds.getHeight());
+
+    size -= getTextHeight() * 2;
+    juce::Rectangle<int> r;
+    r.setSize(size, size);
+    r.setCentre(bounds.getCentreX(), bounds.getCentreY());
+    r.setY(2);
+
+    return r;
+}
+
+//============================================================
+
 ResponseCurveComponent::ResponseCurveComponent(EQ_Hubert_MoszAudioProcessor& p) : audioProcessor(p)
 {
     const auto& params = audioProcessor.getParameters();
@@ -153,7 +216,7 @@ EQ_Hubert_MoszAudioProcessorEditor::EQ_Hubert_MoszAudioProcessorEditor (EQ_Huber
     outputGainSlider(*audioProcessor.apvts.getParameter("Output Gain"), "dB"),
 
     responseCurveComponent(audioProcessor),
-
+    
     peak1FreqSliderAttachment(audioProcessor.apvts, "Peak1 Frequency", peak1FreqSlider),
     peak1GainSliderAttachment(audioProcessor.apvts, "Peak1 Gain", peak1GainSlider),
     peak1QualitySliderAttachment(audioProcessor.apvts, "Peak1 Q", peak1QualitySlider),
