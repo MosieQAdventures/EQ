@@ -21,27 +21,88 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g,
 {
     using namespace juce;
 
-    auto bounds = Rectangle<float>(x, y, width, height);
+    auto outline = slider.findColour(Slider::rotarySliderOutlineColourId);
+    auto fill = slider.findColour(Slider::rotarySliderFillColourId);
+
+    auto bounds = Rectangle<int>(x, y, width, height).toFloat().reduced(3);
+
+    auto radius = jmin(bounds.getWidth(), bounds.getHeight()) / 2.0f;
+    auto toAngle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
+    auto lineW = jmin(5.0f, radius * 0.5f);
+    auto arcRadius = radius - lineW * 0.5f;
 
 
+    //background arc, dial bg path
+    Path backgroundArc;
+    backgroundArc.addCentredArc(bounds.getCentreX(),
+        bounds.getCentreY(),
+        arcRadius,
+        arcRadius,
+        0.0f,
+        rotaryStartAngle,
+        rotaryEndAngle,
+        true);
 
+    //line
+    Point<float> thumbPoint(bounds.getCentreX() + (arcRadius)*std::cos(toAngle - MathConstants<float>::halfPi),
+        bounds.getCentreY() + (arcRadius)*std::sin(toAngle - MathConstants<float>::halfPi));
+
+    g.setColour(slider.findColour(Slider::thumbColourId));
+    g.drawLine(backgroundArc.getBounds().getCentreX(),
+        backgroundArc.getBounds().getCentreY(),
+        thumbPoint.getX(),
+        thumbPoint.getY(),
+        lineW);
+
+    //bg arc cd.
+    g.setColour(outline);
+    g.strokePath(backgroundArc, PathStrokeType(lineW, PathStrokeType::curved, PathStrokeType::rounded));
+
+    //value arc / fill path
+    if (slider.isEnabled())
+    {
+        Path valueArc;
+        valueArc.addCentredArc(bounds.getCentreX(),
+            bounds.getCentreY(),
+            arcRadius,
+            arcRadius,
+            0.0f,
+            rotaryStartAngle,
+            toAngle,
+            true);
+
+        g.setColour(fill);
+        g.strokePath(valueArc, PathStrokeType(lineW, PathStrokeType::curved, PathStrokeType::rounded));
+    }
+
+    //point
+    auto thumbWidth = lineW * 1.33f;
+
+    g.setColour(Colour(121u, 27u, 27u));
+    g.fillEllipse(Rectangle<float>(thumbWidth, thumbWidth).withCentre(thumbPoint));
 }
+
 //============================================================
+
 void RotarySliderWithLabels::paint(juce::Graphics& g)
 {
     using namespace juce;
 
-    auto startAng = degreesToRadians(180.f + 45.f);
-    auto endAng = degreesToRadians(180.f - 45.f) + MathConstants<float>::twoPi;
+    auto startAng = degreesToRadians(180.f + 90.f);
+    auto endAng = degreesToRadians(180.f) + MathConstants<float>::twoPi;
 
     auto range = getRange();
 
     auto sliderBounds = getSliderBounds();
 
-    g.setColour(Colours::red);
+    //g.setColour(Colours::red);
     //g.drawRect(getLocalBounds());
     g.setColour(Colours::white);
-    g.drawRoundedRectangle(sliderBounds.toFloat(), 3.f, 3.f);
+    g.drawRoundedRectangle(sliderBounds.toFloat(), 2.f, 2.f);
+
+    this->setColour(juce::Slider::ColourIds::rotarySliderFillColourId, Colour(165u, 56u, 56u));
+    this->setColour(juce::Slider::ColourIds::thumbColourId, Colour(25u, 25u, 25u));
+    this->setColour(juce::Slider::ColourIds::rotarySliderOutlineColourId, Colour(63u, 63u, 63u));
 
     getLookAndFeel().drawRotarySlider(g,
                                       sliderBounds.getX(),
@@ -61,7 +122,7 @@ juce::Rectangle<int> RotarySliderWithLabels::getSliderBounds() const
 
     auto size = juce::jmin(bounds.getWidth(), bounds.getHeight());
 
-    size -= getTextHeight() * 2;
+    size -= getTextHeight() * 1.5;
     juce::Rectangle<int> r;
     r.setSize(size, size);
     r.setCentre(bounds.getCentreX(), bounds.getCentreY());
@@ -252,8 +313,10 @@ EQ_Hubert_MoszAudioProcessorEditor::~EQ_Hubert_MoszAudioProcessorEditor()
 void EQ_Hubert_MoszAudioProcessorEditor::paint (juce::Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
-
+    //g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+    
+    //33 33 33
+    g.fillAll(juce::Colour(28u, 28u, 28u));
 }
 
 void EQ_Hubert_MoszAudioProcessorEditor::resized()
@@ -262,7 +325,7 @@ void EQ_Hubert_MoszAudioProcessorEditor::resized()
     // subcomponents in your editor..
 
     auto bounds = getLocalBounds();
-    auto responseArea = bounds.removeFromTop(bounds.getHeight() * 0.50);
+    auto responseArea = bounds.removeFromTop(bounds.getHeight() * 0.40);
 
     //V to najwyzej zakomentowac V
     responseArea.removeFromTop(responseArea.getHeight() * 0.02);
@@ -287,15 +350,15 @@ void EQ_Hubert_MoszAudioProcessorEditor::resized()
     highCutSlopeSlider.setBounds(highCutArea);
 
     peak1FreqSlider.setBounds(peak1Area.removeFromTop(peak1Area.getHeight() * 0.5));
-    peak1GainSlider.setBounds(peak1Area.removeFromLeft(peak1Area.getWidth() * 0.5));
+    peak1GainSlider.setBounds(peak1Area.removeFromTop(peak1Area.getHeight() * 0.5));
     peak1QualitySlider.setBounds(peak1Area);
 
     peak2FreqSlider.setBounds(peak2Area.removeFromTop(peak2Area.getHeight() * 0.5));
-    peak2GainSlider.setBounds(peak2Area.removeFromLeft(peak2Area.getWidth() * 0.5));
+    peak2GainSlider.setBounds(peak2Area.removeFromTop(peak2Area.getHeight() * 0.5));
     peak2QualitySlider.setBounds(peak2Area);
 
     peak3FreqSlider.setBounds(peak3Area.removeFromTop(peak3Area.getHeight() * 0.5));
-    peak3GainSlider.setBounds(peak3Area.removeFromLeft(peak3Area.getWidth() * 0.5));
+    peak3GainSlider.setBounds(peak3Area.removeFromTop(peak3Area.getHeight() * 0.5));
     peak3QualitySlider.setBounds(peak3Area);
 
     outputGainSlider.setBounds(outputGainArea);
