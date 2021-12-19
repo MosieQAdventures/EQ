@@ -1,0 +1,15 @@
+{
+    "HighCut Frequency": 7117.0,
+    "HighCut Slope": 2.0,
+    "LowCut Frequency": 20.0,
+    "LowCut Slope": 0.0,
+    "Peak1 Frequency": 552.0,
+    "Peak1 Gain": 18.200000762939453,
+    "Peak1 Q": 1.4000000953674316,
+    "Peak2 Frequency": 3959.0,
+    "Peak2 Gain": 17.400001525878906,
+    "Peak2 Q": 3.1499998569488525,
+    "Peak3 Frequency": 2000.0,
+    "Peak3 Gain": 0.0,
+    "Peak3 Q": 1.0
+}

@@ -199,6 +199,8 @@ ResponseCurveComponent::ResponseCurveComponent(EQ_Hubert_MoszAudioProcessor& p) 
         param->addListener(this);
     }
 
+    updateChain();
+
     startTimerHz(60);
 }
 
@@ -220,22 +222,27 @@ void ResponseCurveComponent::timerCallback()
 {
     if (parametersChanged.compareAndSetBool(false, true))
     {
-        auto chainSettings = getChainSettings(audioProcessor.apvts);
-
-        auto peak1Coefficients = makePeak1Filter(chainSettings, audioProcessor.getSampleRate());
-        auto peak2Coefficients = makePeak2Filter(chainSettings, audioProcessor.getSampleRate());
-        auto peak3Coefficients = makePeak3Filter(chainSettings, audioProcessor.getSampleRate());
-        updateCoefficients(monoChain.get<ChainPositions::Peak1>().coefficients, peak1Coefficients);
-        updateCoefficients(monoChain.get<ChainPositions::Peak2>().coefficients, peak2Coefficients);
-        updateCoefficients(monoChain.get<ChainPositions::Peak3>().coefficients, peak3Coefficients);
-
-        auto lowCutCoefficients = makeLowCutFilter(chainSettings, audioProcessor.getSampleRate());
-        auto highCutCoefficients = makeHighCutFilter(chainSettings, audioProcessor.getSampleRate());
-        updateCutFilter(monoChain.get<ChainPositions::LowCut>(), lowCutCoefficients, chainSettings.lowCutSlope);
-        updateCutFilter(monoChain.get<ChainPositions::HighCut>(), highCutCoefficients, chainSettings.highCutSlope);
+        updateChain();
 
         repaint();
     }
+}
+
+void ResponseCurveComponent::updateChain()
+{
+    auto chainSettings = getChainSettings(audioProcessor.apvts);
+
+    auto peak1Coefficients = makePeak1Filter(chainSettings, audioProcessor.getSampleRate());
+    auto peak2Coefficients = makePeak2Filter(chainSettings, audioProcessor.getSampleRate());
+    auto peak3Coefficients = makePeak3Filter(chainSettings, audioProcessor.getSampleRate());
+    updateCoefficients(monoChain.get<ChainPositions::Peak1>().coefficients, peak1Coefficients);
+    updateCoefficients(monoChain.get<ChainPositions::Peak2>().coefficients, peak2Coefficients);
+    updateCoefficients(monoChain.get<ChainPositions::Peak3>().coefficients, peak3Coefficients);
+
+    auto lowCutCoefficients = makeLowCutFilter(chainSettings, audioProcessor.getSampleRate());
+    auto highCutCoefficients = makeHighCutFilter(chainSettings, audioProcessor.getSampleRate());
+    updateCutFilter(monoChain.get<ChainPositions::LowCut>(), lowCutCoefficients, chainSettings.lowCutSlope);
+    updateCutFilter(monoChain.get<ChainPositions::HighCut>(), highCutCoefficients, chainSettings.highCutSlope);
 }
 
 void ResponseCurveComponent::paint(juce::Graphics& g)
@@ -391,6 +398,7 @@ void EQ_Hubert_MoszAudioProcessorEditor::resized()
     responseArea.removeFromBottom(responseArea.getHeight() * 0.02);
     responseArea.removeFromLeft(responseArea.getWidth() * 0.02);
     responseArea.removeFromRight(responseArea.getWidth() * 0.02);
+    bounds.removeFromBottom(bounds.getHeight() * 0.02);
 
     responseCurveComponent.setBounds(responseArea);
 

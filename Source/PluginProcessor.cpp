@@ -8,6 +8,8 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "json.hpp"
+#include <fstream>
 
 //==============================================================================
 EQ_Hubert_MoszAudioProcessor::EQ_Hubert_MoszAudioProcessor()
@@ -113,6 +115,10 @@ void EQ_Hubert_MoszAudioProcessor::prepareToPlay (double sampleRate, int samples
 
     updateFilters();
 
+    //---------------------------------- TESTING
+
+    create_txt_file();
+
 }
 
 void EQ_Hubert_MoszAudioProcessor::releaseResources()
@@ -179,6 +185,10 @@ void EQ_Hubert_MoszAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
 
     leftChain.process(leftContext);
     rightChain.process(rightContext);
+
+    create_txt_file(); //tworzenie plikow txt i json 
+                       
+    //dodac funkcje do wysylania jsona websocketem? --------------------------------------------------------------------------------
 
     //applyGain(buffer, outputGain);
 }
@@ -376,6 +386,76 @@ juce::AudioProcessorValueTreeState::ParameterLayout EQ_Hubert_MoszAudioProcessor
     layout.add(std::make_unique<juce::AudioParameterFloat>("Output Gain", "Output Gain", juce::NormalisableRange<float>(-12.f, 12.f, 0.1f, 1.f), 0.0f));
 
     return layout;
+}
+
+//--------------------
+
+void EQ_Hubert_MoszAudioProcessor::create_txt_file()
+{
+    // txt file
+
+    float lowCutFreq = apvts.getRawParameterValue("LowCut Frequency")->load();
+    float lowCutSlope = apvts.getRawParameterValue("LowCut Slope")->load();
+    float peak1Freq = apvts.getRawParameterValue("Peak1 Frequency")->load();
+    float peak1GainInDecibels = apvts.getRawParameterValue("Peak1 Gain")->load();
+    float peak1Quality = apvts.getRawParameterValue("Peak1 Q")->load();
+    float peak2Freq = apvts.getRawParameterValue("Peak2 Frequency")->load();
+    float peak2GainInDecibels = apvts.getRawParameterValue("Peak2 Gain")->load();
+    float peak2Quality = apvts.getRawParameterValue("Peak2 Q")->load();
+    float peak3Freq = apvts.getRawParameterValue("Peak3 Frequency")->load();
+    float peak3GainInDecibels = apvts.getRawParameterValue("Peak3 Gain")->load();
+    float peak3Quality = apvts.getRawParameterValue("Peak3 Q")->load();
+    float highCutFreq = apvts.getRawParameterValue("HighCut Frequency")->load();
+    float highCutSlope = apvts.getRawParameterValue("HighCut Slope")->load();
+
+    std::ofstream parameter_text_file("C:\\Users\\mosie\\Desktop\\Hubert\\Programming\\EQ_Hubert_Mosz\\AdditionalFiles\\parameter_values.txt");
+
+    parameter_text_file << "LowCut Frequency: " << std::to_string(lowCutFreq) << " Hz" << std::endl;
+    parameter_text_file << "LowCut Slope: " << std::to_string(lowCutSlope) << " Position (db/Oct)" << std::endl;
+    parameter_text_file << "Peak1 Frequency: " << std::to_string(peak1Freq) << " Hz" << std::endl;
+    parameter_text_file << "Peak1 Gain: " << std::to_string(peak1GainInDecibels) << " dB" << std::endl;
+    parameter_text_file << "Peak1 Q: " << std::to_string(peak1Quality) << " " << std::endl;
+    parameter_text_file << "Peak2 Frequency: " << std::to_string(peak2Freq) << " Hz" << std::endl;
+    parameter_text_file << "Peak2 Gain: " << std::to_string(peak2GainInDecibels) << " dB" << std::endl;
+    parameter_text_file << "Peak2 Q: " << std::to_string(peak2Quality) << " " << std::endl;
+    parameter_text_file << "Peak3 Frequency: " << std::to_string(peak3Freq) << " Hz" << std::endl;
+    parameter_text_file << "Peak3 Gain: " << std::to_string(peak3GainInDecibels) << " dB" << std::endl;
+    parameter_text_file << "Peak3 Q: " << std::to_string(peak3Quality) << " " << std::endl;
+    parameter_text_file << "HighCut Frequency: " << std::to_string(highCutFreq) << " Hz" << std::endl;
+    parameter_text_file << "HighCut Slope: " << std::to_string(highCutSlope) << " Position (db/Oct)" << std::endl;
+
+    parameter_text_file.close();
+
+    // json file
+
+    std::ofstream json_text_file("C:\\Users\\mosie\\Desktop\\Hubert\\Programming\\EQ_Hubert_Mosz\\AdditionalFiles\\json_parameter_values.json");
+
+    nlohmann::json json_parameter_data;
+
+    json_parameter_data = {
+        {"LowCut Frequency", lowCutFreq},
+        {"LowCut Slope", lowCutSlope},
+        {"Peak3 Q", peak3Quality},
+        {"Peak1 Frequency", peak1Freq},
+        {"Peak1 Gain", peak1GainInDecibels},
+        {"Peak1 Q", peak1Quality},
+        {"Peak2 Frequency", peak2Freq},
+        {"Peak2 Gain", peak2GainInDecibels},
+        {"Peak2 Q", peak2Quality},
+        {"Peak3 Frequency", peak3Freq},
+        {"Peak3 Gain", peak3GainInDecibels},
+        {"HighCut Frequency", highCutFreq},
+        {"HighCut Slope", highCutSlope}
+    };
+
+    json_text_file << std::setw(4) << json_parameter_data << std::endl;
+
+    json_text_file.close();
+
+    // read a JSON file
+    // std::ifstream i("file.json");
+    // json j;
+    // i >> j;
 }
 
 

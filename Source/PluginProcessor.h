@@ -169,6 +169,10 @@ private:
 
     void updateFilters();
 
+    //----------------- testing
+
+    void create_txt_file();
+
     /*Gain outputGain;
     juce::AudioParameterFloat* outputGainParam{ nullptr };
 
