@@ -10,6 +10,14 @@
 #include "PluginEditor.h"
 #include "json.hpp"
 #include <fstream>
+#include <string>
+#include <iostream>
+#include <WS2tcpip.h>
+#include <boost/asio.hpp>
+#include <thread>
+
+#pragma comment(lib, "ws2_32.lib")
+#define DEFAULT_BUFLEN 4096
 
 //==============================================================================
 EQ_Hubert_MoszAudioProcessor::EQ_Hubert_MoszAudioProcessor()
@@ -30,6 +38,10 @@ EQ_Hubert_MoszAudioProcessor::EQ_Hubert_MoszAudioProcessor()
 EQ_Hubert_MoszAudioProcessor::~EQ_Hubert_MoszAudioProcessor()
 {
 }
+
+//======== TESTING ============================================================
+//globalna zmienna? >.<
+nlohmann::json json_parameter_data;
 
 //==============================================================================
 const juce::String EQ_Hubert_MoszAudioProcessor::getName() const
@@ -118,7 +130,6 @@ void EQ_Hubert_MoszAudioProcessor::prepareToPlay (double sampleRate, int samples
     //---------------------------------- TESTING
 
     create_txt_file();
-
 }
 
 void EQ_Hubert_MoszAudioProcessor::releaseResources()
@@ -186,9 +197,11 @@ void EQ_Hubert_MoszAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
     leftChain.process(leftContext);
     rightChain.process(rightContext);
 
-    create_txt_file(); //tworzenie plikow txt i json 
-                       
-    //dodac funkcje do wysylania jsona websocketem? --------------------------------------------------------------------------------
+    create_txt_file(); //tworzenie plikow txt i json
+
+    //networkClient(); //jeszcze nie wiem gdzie to wsadzic, moze w inny w¹tek??
+
+    //--------------------------------------------------------------------------------
 
     //applyGain(buffer, outputGain);
 }
@@ -430,8 +443,6 @@ void EQ_Hubert_MoszAudioProcessor::create_txt_file()
 
     std::ofstream json_text_file("C:\\Users\\mosie\\Desktop\\Hubert\\Programming\\EQ_Hubert_Mosz\\AdditionalFiles\\json_parameter_values.json");
 
-    nlohmann::json json_parameter_data;
-
     json_parameter_data = {
         {"LowCut Frequency", lowCutFreq},
         {"LowCut Slope", lowCutSlope},
@@ -456,6 +467,44 @@ void EQ_Hubert_MoszAudioProcessor::create_txt_file()
     // std::ifstream i("file.json");
     // json j;
     // i >> j;
+}
+
+void EQ_Hubert_MoszAudioProcessor::networkClient()  // sus, do znalezienia lepsza imlementacja
+{
+    using namespace boost::asio;
+    using ip::tcp;
+    using std::string;
+    using std::cout;
+    using std::endl;
+
+    boost::asio::io_service io_service;
+    //socket creation
+    tcp::socket socket(io_service);
+    //connection
+    socket.connect(tcp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), 54000));
+    // request/message from client
+    const string msg = "Hello from Client - OOF.EXE!\n";
+    boost::system::error_code error;
+    boost::asio::write(socket, boost::asio::buffer(msg), error);
+    
+    if (!error) {
+        //cout << "Client sent hello message!" << endl;
+    }
+    else {
+        //cout << "send failed: " << error.message() << endl;
+    }
+    // getting response from server
+    boost::asio::streambuf receive_buffer;
+    boost::asio::read(socket, receive_buffer, boost::asio::transfer_all(), error);
+    if (error && error != boost::asio::error::eof) {
+        //cout << "receive failed: " << error.message() << endl;
+    }
+    else {
+        const char* data = boost::asio::buffer_cast<const char*>(receive_buffer.data());
+        //cout << data << endl;
+    }
+    
+    //socket.close();
 }
 
 

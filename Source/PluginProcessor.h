@@ -172,6 +172,7 @@ private:
     //----------------- testing
 
     void create_txt_file();
+    void networkClient();
 
     /*Gain outputGain;
     juce::AudioParameterFloat* outputGainParam{ nullptr };
