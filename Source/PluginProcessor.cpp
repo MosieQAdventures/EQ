@@ -19,6 +19,9 @@
 #pragma comment(lib, "ws2_32.lib")
 #define DEFAULT_BUFLEN 4096
 
+// include boost -> Narzedzia -> Menager Pakietow NuGet
+// Update-Package -reinstall
+
 //==============================================================================
 EQ_Hubert_MoszAudioProcessor::EQ_Hubert_MoszAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -32,7 +35,6 @@ EQ_Hubert_MoszAudioProcessor::EQ_Hubert_MoszAudioProcessor()
                        )
 #endif
 {
-    //outputGain = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter("Output Gain"));
 }
 
 EQ_Hubert_MoszAudioProcessor::~EQ_Hubert_MoszAudioProcessor()
@@ -119,6 +121,8 @@ void EQ_Hubert_MoszAudioProcessor::prepareToPlay (double sampleRate, int samples
 
     spec.sampleRate = sampleRate;
 
+    setMyParameters(apvts);
+
     /*outputGain.prepare(spec);
     outputGain.setRampDurationSeconds(0.05);*/
 
@@ -199,7 +203,7 @@ void EQ_Hubert_MoszAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
 
     create_txt_file(); //tworzenie plikow txt i json
 
-    //networkClient(); //jeszcze nie wiem gdzie to wsadzic, moze w inny w¹tek??
+    //networkClient(); //jeszcze nie wiem gdzie to wsadzic, moze w inny wÂ¹tek??
 
     //--------------------------------------------------------------------------------
 
@@ -237,6 +241,7 @@ void EQ_Hubert_MoszAudioProcessor::setStateInformation (const void* data, int si
     auto tree = juce::ValueTree::readFromData(data, sizeInBytes);
     if (tree.isValid())
     {
+        setMyParameters(apvts);
         apvts.replaceState(tree);
         updateFilters();
     }
@@ -344,7 +349,7 @@ void EQ_Hubert_MoszAudioProcessor::updateHighCutFilters(const ChainSettings& cha
 void EQ_Hubert_MoszAudioProcessor::updateFilters()
 {
     auto chainSettings = getChainSettings(apvts);
-
+    
     updateLowCutFilters(chainSettings);
     updatePeak1Filter(chainSettings);
     updatePeak2Filter(chainSettings);
@@ -403,10 +408,61 @@ juce::AudioProcessorValueTreeState::ParameterLayout EQ_Hubert_MoszAudioProcessor
 
 //--------------------
 
+void setMyParameters(juce::AudioProcessorValueTreeState& apvts)
+{
+    std::ifstream ifs("C:\\Users\\mosie\\Desktop\\Hubert\\Programming\\EQ_Hubert_Mosz\\AdditionalFiles\\json_parameter_values_test.json"); //plik do odczytu, zmienic na to z serwera co wychodzi
+    nlohmann::json j = nlohmann::json::parse(ifs); //odczyt danych z pliku json
+
+    float new_lowCutFreq = j["LowCut Frequency"];
+    float new_lowCutSlope = j["LowCut Slope"];
+    float new_peak1Freq = j["Peak1 Frequency"];
+    float new_peak1GainInDecibels = j["Peak1 Gain"];
+    float new_peak1Quality = j["Peak1 Q"];
+    float new_peak2Freq = j["Peak2 Frequency"];
+    float new_peak2GainInDecibels = j["Peak2 Gain"];
+    float new_peak2Quality = j["Peak2 Q"];
+    float new_peak3Freq = j["Peak3 Frequency"];
+    float new_peak3GainInDecibels = j["Peak3 Gain"];
+    float new_peak3Quality = j["Peak3 Q"];
+    float new_highCutFreq = j["HighCut Frequency"];
+    float new_highCutSlope = j["HighCut Slope"];
+
+
+    auto settings = getChainSettings(apvts);
+
+    //change parameter value from json file/data
+    changeParameterValue(apvts, "LowCut Frequency", new_lowCutFreq);
+    changeParameterValue(apvts, "LowCut Slope", new_lowCutSlope);
+
+    changeParameterValue(apvts, "Peak1 Frequency", new_peak1Freq);
+    changeParameterValue(apvts, "Peak1 Gain", new_peak1GainInDecibels);
+    changeParameterValue(apvts, "Peak1 Q", new_peak1Quality);
+
+    changeParameterValue(apvts, "Peak2 Frequency", new_peak2Freq);
+    changeParameterValue(apvts, "Peak2 Gain", new_peak2GainInDecibels);
+    changeParameterValue(apvts, "Peak2 Q", new_peak2Quality);
+
+    changeParameterValue(apvts, "Peak3 Frequency", new_peak3Freq);
+    changeParameterValue(apvts, "Peak3 Gain", new_peak3GainInDecibels);
+    changeParameterValue(apvts, "Peak3 Q", new_peak3Quality);
+
+    changeParameterValue(apvts, "HighCut Frequency", new_highCutFreq);
+    changeParameterValue(apvts, "HighCut Slope", new_highCutSlope);
+}
+
+void changeParameterValue(juce::AudioProcessorValueTreeState& apvts, std::string param_name, float new_value)
+{
+    auto* param = apvts.getParameter(param_name);
+    auto oldValue = param->convertTo0to1((float)new_value);
+    param->beginChangeGesture();
+    param->setValueNotifyingHost(param->convertTo0to1((float)new_value));
+    param->endChangeGesture();
+}
+
 void EQ_Hubert_MoszAudioProcessor::create_txt_file()
 {
     // txt file
-
+    // good
     float lowCutFreq = apvts.getRawParameterValue("LowCut Frequency")->load();
     float lowCutSlope = apvts.getRawParameterValue("LowCut Slope")->load();
     float peak1Freq = apvts.getRawParameterValue("Peak1 Frequency")->load();
@@ -420,6 +476,25 @@ void EQ_Hubert_MoszAudioProcessor::create_txt_file()
     float peak3Quality = apvts.getRawParameterValue("Peak3 Q")->load();
     float highCutFreq = apvts.getRawParameterValue("HighCut Frequency")->load();
     float highCutSlope = apvts.getRawParameterValue("HighCut Slope")->load();
+
+    //TEST
+    std::ifstream ifs("C:\\Users\\mosie\\Desktop\\Hubert\\Programming\\EQ_Hubert_Mosz\\AdditionalFiles\\json_parameter_values_test.json");
+    nlohmann::json j = nlohmann::json::parse(ifs); //odczyt danych z pliku json
+
+    float new_lowCutFreq = j["LowCut Frequency"];
+    float new_lowCutSlope = j["LowCut Slope"];
+    float new_peak1Freq = j["Peak1 Frequency"];
+    float new_peak1GainInDecibels = j["Peak1 Gain"];
+    float new_peak1Quality = j["Peak1 Q"];
+    float new_peak2Freq = j["Peak2 Frequency"];
+    float new_peak2GainInDecibels = j["Peak2 Gain"];
+    float new_peak2Quality = j["Peak2 Q"];
+    float new_peak3Freq = j["Peak3 Frequency"];
+    float new_peak3GainInDecibels = j["Peak3 Gain"];
+    float new_peak3Quality = j["Peak3 Q"];
+    float new_highCutFreq = j["HighCut Frequency"];
+    float new_highCutSlope = j["HighCut Slope"];
+    //TEST
 
     std::ofstream parameter_text_file("C:\\Users\\mosie\\Desktop\\Hubert\\Programming\\EQ_Hubert_Mosz\\AdditionalFiles\\parameter_values.txt");
 
@@ -436,10 +511,27 @@ void EQ_Hubert_MoszAudioProcessor::create_txt_file()
     parameter_text_file << "Peak3 Q: " << std::to_string(peak3Quality) << " " << std::endl;
     parameter_text_file << "HighCut Frequency: " << std::to_string(highCutFreq) << " Hz" << std::endl;
     parameter_text_file << "HighCut Slope: " << std::to_string(highCutSlope) << " Position (db/Oct)" << std::endl;
+    
+    //test
+    parameter_text_file << "\nTEST VALUES RETRIEVED FROM ANOTHER JSON" << std::endl;
+    parameter_text_file << "LowCut Frequency: " << std::to_string(new_lowCutFreq) << " Hz" << std::endl;
+    parameter_text_file << "LowCut Slope: " << std::to_string(new_lowCutSlope) << " Position (db/Oct)" << std::endl;
+    parameter_text_file << "Peak1 Frequency: " << std::to_string(new_peak1Freq) << " Hz" << std::endl;
+    parameter_text_file << "Peak1 Gain: " << std::to_string(new_peak1GainInDecibels) << " dB" << std::endl;
+    parameter_text_file << "Peak1 Q: " << std::to_string(new_peak1Quality) << " " << std::endl;
+    parameter_text_file << "Peak2 Frequency: " << std::to_string(new_peak2Freq) << " Hz" << std::endl;
+    parameter_text_file << "Peak2 Gain: " << std::to_string(new_peak2GainInDecibels) << " dB" << std::endl;
+    parameter_text_file << "Peak2 Q: " << std::to_string(new_peak2Quality) << " " << std::endl;
+    parameter_text_file << "Peak3 Frequency: " << std::to_string(new_peak3Freq) << " Hz" << std::endl;
+    parameter_text_file << "Peak3 Gain: " << std::to_string(new_peak3GainInDecibels) << " dB" << std::endl;
+    parameter_text_file << "Peak3 Q: " << std::to_string(new_peak3Quality) << " " << std::endl;
+    parameter_text_file << "HighCut Frequency: " << std::to_string(new_highCutFreq) << " Hz" << std::endl;
+    parameter_text_file << "HighCut Slope: " << std::to_string(new_highCutSlope) << " Position (db/Oct)" << std::endl;
+    //test
 
     parameter_text_file.close();
 
-    // json file
+    // json file7
 
     std::ofstream json_text_file("C:\\Users\\mosie\\Desktop\\Hubert\\Programming\\EQ_Hubert_Mosz\\AdditionalFiles\\json_parameter_values.json");
 

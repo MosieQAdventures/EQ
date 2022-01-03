@@ -29,6 +29,9 @@ struct ChainSettings
     Slope lowCutSlope{ Slope::Slope_12 }, highCutSlope{ Slope::Slope_12 };
 };
 
+void setMyParameters(juce::AudioProcessorValueTreeState& apvts); // test
+void changeParameterValue(juce::AudioProcessorValueTreeState& apvts, std::string param_name, float new_value); //test
+
 ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts);
 
 using Filter = juce::dsp::IIR::Filter<float>;
@@ -174,17 +177,6 @@ private:
     void create_txt_file();
     void networkClient();
 
-    /*Gain outputGain;
-    juce::AudioParameterFloat* outputGainParam{ nullptr };
-
-    template<typename T, typename U>
-    void applyGain(T& buffer, U& gain)
-    {
-        auto block = juce::dsp::AudioBlock<float>(buffer);
-        auto ctx = juce::dsp::ProcessContextReplacing<float>(block);
-        gain.process(ctx);
-    }*/
-
-    //==============================================================================
+    //=============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EQ_Hubert_MoszAudioProcessor)
 };
