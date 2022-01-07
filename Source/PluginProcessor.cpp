@@ -23,6 +23,10 @@
 // Update-Package -reinstall
 
 //==============================================================================
+//test
+void networkClient();
+//test
+
 EQ_Hubert_MoszAudioProcessor::EQ_Hubert_MoszAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
      : AudioProcessor (BusesProperties()
@@ -35,6 +39,8 @@ EQ_Hubert_MoszAudioProcessor::EQ_Hubert_MoszAudioProcessor()
                        )
 #endif
 {
+    std::thread t1{ networkClient };
+    t1.detach();
 }
 
 EQ_Hubert_MoszAudioProcessor::~EQ_Hubert_MoszAudioProcessor()
@@ -44,6 +50,9 @@ EQ_Hubert_MoszAudioProcessor::~EQ_Hubert_MoszAudioProcessor()
 //======== TESTING ============================================================
 //globalna zmienna? >.<
 nlohmann::json json_parameter_data;
+std::string json_from_server_data;
+
+
 
 //==============================================================================
 const juce::String EQ_Hubert_MoszAudioProcessor::getName() const
@@ -121,7 +130,7 @@ void EQ_Hubert_MoszAudioProcessor::prepareToPlay (double sampleRate, int samples
 
     spec.sampleRate = sampleRate;
 
-    setMyParameters(apvts);
+    //setMyParameters(apvts);
 
     /*outputGain.prepare(spec);
     outputGain.setRampDurationSeconds(0.05);*/
@@ -130,6 +139,8 @@ void EQ_Hubert_MoszAudioProcessor::prepareToPlay (double sampleRate, int samples
     rightChain.prepare(spec);
 
     updateFilters();
+    //networkClient();
+    
 
     //---------------------------------- TESTING
 
@@ -203,7 +214,9 @@ void EQ_Hubert_MoszAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
 
     create_txt_file(); //tworzenie plikow txt i json
 
-    //networkClient(); //jeszcze nie wiem gdzie to wsadzic, moze w inny w¹tek??
+    setMyParameters(apvts);
+
+    //networkClient(); //jeszcze nie wiem gdzie to wsadzic, moze w inny watek??
 
     //--------------------------------------------------------------------------------
 
@@ -410,8 +423,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout EQ_Hubert_MoszAudioProcessor
 
 void setMyParameters(juce::AudioProcessorValueTreeState& apvts)
 {
+    /*
     std::ifstream ifs("C:\\Users\\mosie\\Desktop\\Hubert\\Programming\\EQ_Hubert_Mosz\\AdditionalFiles\\json_parameter_values_test.json"); //plik do odczytu, zmienic na to z serwera co wychodzi
-    nlohmann::json j = nlohmann::json::parse(ifs); //odczyt danych z pliku json
+    */
+    //nlohmann::json j = nlohmann::json::parse(ifs); //odczyt danych z pliku json
+    nlohmann::json j = nlohmann::json::parse(json_from_server_data);
 
     float new_lowCutFreq = j["LowCut Frequency"];
     float new_lowCutSlope = j["LowCut Slope"];
@@ -494,6 +510,8 @@ void EQ_Hubert_MoszAudioProcessor::create_txt_file()
     float new_peak3Quality = j["Peak3 Q"];
     float new_highCutFreq = j["HighCut Frequency"];
     float new_highCutSlope = j["HighCut Slope"];
+
+    //auto meter_thread_value = meterThread.value.load();
     //TEST
 
     std::ofstream parameter_text_file("C:\\Users\\mosie\\Desktop\\Hubert\\Programming\\EQ_Hubert_Mosz\\AdditionalFiles\\parameter_values.txt");
@@ -513,6 +531,7 @@ void EQ_Hubert_MoszAudioProcessor::create_txt_file()
     parameter_text_file << "HighCut Slope: " << std::to_string(highCutSlope) << " Position (db/Oct)" << std::endl;
     
     //test
+    /*
     parameter_text_file << "\nTEST VALUES RETRIEVED FROM ANOTHER JSON" << std::endl;
     parameter_text_file << "LowCut Frequency: " << std::to_string(new_lowCutFreq) << " Hz" << std::endl;
     parameter_text_file << "LowCut Slope: " << std::to_string(new_lowCutSlope) << " Position (db/Oct)" << std::endl;
@@ -527,6 +546,9 @@ void EQ_Hubert_MoszAudioProcessor::create_txt_file()
     parameter_text_file << "Peak3 Q: " << std::to_string(new_peak3Quality) << " " << std::endl;
     parameter_text_file << "HighCut Frequency: " << std::to_string(new_highCutFreq) << " Hz" << std::endl;
     parameter_text_file << "HighCut Slope: " << std::to_string(new_highCutSlope) << " Position (db/Oct)" << std::endl;
+    */
+    //parameter_text_file << "MeterThread Value: " << std::to_string(meter_thread_value) << std::endl;
+    parameter_text_file << "TEST\n" << std::setw(4) << json_from_server_data << std::endl;
     //test
 
     parameter_text_file.close();
@@ -561,44 +583,82 @@ void EQ_Hubert_MoszAudioProcessor::create_txt_file()
     // i >> j;
 }
 
-void EQ_Hubert_MoszAudioProcessor::networkClient()  // sus, do znalezienia lepsza imlementacja
+void networkClient()
 {
-    using namespace boost::asio;
-    using ip::tcp;
-    using std::string;
-    using std::cout;
-    using std::endl;
-
     boost::asio::io_service io_service;
-    //socket creation
-    tcp::socket socket(io_service);
-    //connection
-    socket.connect(tcp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), 54000));
-    // request/message from client
-    const string msg = "Hello from Client - OOF.EXE!\n";
-    boost::system::error_code error;
-    boost::asio::write(socket, boost::asio::buffer(msg), error);
-    
-    if (!error) {
-        //cout << "Client sent hello message!" << endl;
+    // socket creation
+    boost::asio::ip::tcp::socket client_socket(io_service);
+
+    client_socket.connect(boost::asio::ip::tcp::endpoint
+    (boost::asio::ip::address::from_string
+    ("127.0.0.1"), 54000));
+
+    // Getting username from user
+    std::string u_name, reply, response;
+    u_name = "";
+
+    // Sending username to another end
+    // to initiate the conversation
+    //sendData(client_socket, u_name);
+
+    // Infinite loop for chit-chat
+    while (true) {
+        //ODBIOR DANYCH
+
+        // Fetching response
+        //response = getData(client_socket);
+        boost::asio::streambuf buf; //wyciagniecie fcji
+        read_until(client_socket, buf, "\n");
+        std::string response = buffer_cast<const char*>(buf.data());
+
+        // Popping last character "\n"
+        response.pop_back();
+
+        // Validating if the connection has to be closed
+        if (response == "exit") {
+            //std::cout << "Connection terminated" << std::endl;
+            break;
+        }
+
+        //system("CLS");
+        //std::cout << response << std::endl;
+
+        //ustawienie zmiennej?
+        json_from_server_data = response;
+
+        //---------------------------------
+
+        //WYSYLKA DANYCH
+
+        // Reading new message from input stream
+        //cout << u_name << "";
+        //getline(cin, reply); //tutaj czeka na klawisz wiec lipa
+        //reply = "ok";
+
+        //sendData(client_socket, reply /*json_parameter_data*/); //poki co nic nie wysylam
+        //boost::asio::write(socket, boost::asio::buffer(reply + "\n")); //wyciagniecie fcji
+
+        //cout << str_i << endl;
+        //i = i++;
+
+        if (reply == "exit")
+            break;
     }
-    else {
-        //cout << "send failed: " << error.message() << endl;
-    }
-    // getting response from server
-    boost::asio::streambuf receive_buffer;
-    boost::asio::read(socket, receive_buffer, boost::asio::transfer_all(), error);
-    if (error && error != boost::asio::error::eof) {
-        //cout << "receive failed: " << error.message() << endl;
-    }
-    else {
-        const char* data = boost::asio::buffer_cast<const char*>(receive_buffer.data());
-        //cout << data << endl;
-    }
-    
-    //socket.close();
 }
 
+/*std::string getData(boost::asio::ip::tcp::socket& socket)
+{
+    boost::asio::streambuf buf;
+    read_until(socket, buf, "\n");
+    std::string data = buffer_cast<const char*>(buf.data());
+    return data;
+}
+
+void sendData(boost::asio::ip::tcp::socket& socket, const std::string& message)
+{
+    boost::asio::write(socket,
+        boost::asio::buffer(message + "\n"));
+}*/
 
 //==============================================================================
 // This creates new instances of the plugin..
@@ -606,3 +666,4 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new EQ_Hubert_MoszAudioProcessor();
 }
+

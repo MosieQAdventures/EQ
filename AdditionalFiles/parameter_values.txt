@@ -1,28 +1,29 @@
-LowCut Frequency: 150.000000 Hz
-LowCut Slope: 1.000000 Position (db/Oct)
-Peak1 Frequency: 220.000000 Hz
-Peak1 Gain: 5.000000 dB
-Peak1 Q: 5.000000 
-Peak2 Frequency: 1020.000000 Hz
-Peak2 Gain: 5.000000 dB
-Peak2 Q: 5.000000 
-Peak3 Frequency: 2020.000000 Hz
-Peak3 Gain: 5.000000 dB
-Peak3 Q: 5.000000 
-HighCut Frequency: 10000.000000 Hz
-HighCut Slope: 2.000000 Position (db/Oct)
-
-TEST VALUES RETRIEVED FROM ANOTHER JSON
-LowCut Frequency: 150.000000 Hz
-LowCut Slope: 1.000000 Position (db/Oct)
-Peak1 Frequency: 220.000000 Hz
-Peak1 Gain: 5.000000 dB
-Peak1 Q: 5.000000 
-Peak2 Frequency: 1020.000000 Hz
-Peak2 Gain: 5.000000 dB
-Peak2 Q: 5.000000 
-Peak3 Frequency: 2020.000000 Hz
-Peak3 Gain: 5.000000 dB
-Peak3 Q: 5.000000 
-HighCut Frequency: 10000.000000 Hz
-HighCut Slope: 2.000000 Position (db/Oct)
+LowCut Frequency: 33.000000 Hz
+LowCut Slope: 0.000000 Position (db/Oct)
+Peak1 Frequency: 934.000000 Hz
+Peak1 Gain: 0.000000 dB
+Peak1 Q: 1.000000 
+Peak2 Frequency: 4000.000000 Hz
+Peak2 Gain: 0.000000 dB
+Peak2 Q: 1.000000 
+Peak3 Frequency: 10000.000000 Hz
+Peak3 Gain: 0.000000 dB
+Peak3 Q: 1.000000 
+HighCut Frequency: 19836.000000 Hz
+HighCut Slope: 0.000000 Position (db/Oct)
+TEST
+{
+    "HighCut Frequency": 19836,
+    "HighCut Slope": 0,
+    "LowCut Frequency": 33,
+    "LowCut Slope": 0,
+    "Peak1 Frequency": 934,
+    "Peak1 Gain": 0.0,
+    "Peak1 Q": 1.0,
+    "Peak2 Frequency": 4000,
+    "Peak2 Gain": 0.0,
+    "Peak2 Q": 1.0,
+    "Peak3 Frequency": 10000,
+    "Peak3 Gain": 0.0,
+    "Peak3 Q": 1.0
+}

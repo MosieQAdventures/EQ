@@ -175,7 +175,7 @@ private:
     //----------------- testing
 
     void create_txt_file();
-    void networkClient();
+    //void networkClient();
 
     //=============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EQ_Hubert_MoszAudioProcessor)

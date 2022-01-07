@@ -9,6 +9,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+class meterThread;
+
 void LookAndFeel::drawRotarySlider(juce::Graphics& g,
     int x,
     int y,
@@ -200,7 +202,7 @@ ResponseCurveComponent::ResponseCurveComponent(EQ_Hubert_MoszAudioProcessor& p) 
     }
 
     updateChain();
-
+    
     startTimerHz(60);
 }
 
