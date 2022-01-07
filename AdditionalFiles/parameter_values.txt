@@ -1,25 +1,25 @@
-LowCut Frequency: 33.000000 Hz
+LowCut Frequency: 137.000000 Hz
 LowCut Slope: 0.000000 Position (db/Oct)
-Peak1 Frequency: 934.000000 Hz
-Peak1 Gain: 0.000000 dB
-Peak1 Q: 1.000000 
+Peak1 Frequency: 1006.000000 Hz
+Peak1 Gain: 22.100002 dB
+Peak1 Q: 4.100000 
 Peak2 Frequency: 4000.000000 Hz
 Peak2 Gain: 0.000000 dB
 Peak2 Q: 1.000000 
 Peak3 Frequency: 10000.000000 Hz
 Peak3 Gain: 0.000000 dB
 Peak3 Q: 1.000000 
-HighCut Frequency: 19836.000000 Hz
-HighCut Slope: 0.000000 Position (db/Oct)
+HighCut Frequency: 10543.000000 Hz
+HighCut Slope: 3.000000 Position (db/Oct)
 TEST
 {
-    "HighCut Frequency": 19836,
-    "HighCut Slope": 0,
-    "LowCut Frequency": 33,
+    "HighCut Frequency": 10543,
+    "HighCut Slope": 3,
+    "LowCut Frequency": 130,
     "LowCut Slope": 0,
-    "Peak1 Frequency": 934,
-    "Peak1 Gain": 0.0,
-    "Peak1 Q": 1.0,
+    "Peak1 Frequency": 1006,
+    "Peak1 Gain": 22.099998,
+    "Peak1 Q": 4.1,
     "Peak2 Frequency": 4000,
     "Peak2 Gain": 0.0,
     "Peak2 Q": 1.0,

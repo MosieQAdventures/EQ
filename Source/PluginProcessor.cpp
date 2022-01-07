@@ -50,7 +50,8 @@ EQ_Hubert_MoszAudioProcessor::~EQ_Hubert_MoszAudioProcessor()
 //======== TESTING ============================================================
 //globalna zmienna? >.<
 nlohmann::json json_parameter_data;
-std::string json_from_server_data;
+std::string json_from_server_data = 
+"{ \"HighCut Frequency\": 20000.0, \"HighCut Slope\" : 0.0, \"LowCut Frequency\" : 20.0, \"LowCut Slope\" : 0.0, \"Peak1 Frequency\" : 200.0, \"Peak1 Gain\" : 0.0, \"Peak1 Q\" : 1.0, \"Peak2 Frequency\" : 1000.0, \"Peak2 Gain\" : 0.0, \"Peak2 Q\" : 1.0, \"Peak3 Frequency\" : 2000.0, \"Peak3 Gain\" : 0.0, \"Peak3 Q\" : 1.0}"; //inicjalizacja zmiennej
 
 
 
@@ -130,7 +131,7 @@ void EQ_Hubert_MoszAudioProcessor::prepareToPlay (double sampleRate, int samples
 
     spec.sampleRate = sampleRate;
 
-    //setMyParameters(apvts);
+    setMyParameters(apvts);
 
     /*outputGain.prepare(spec);
     outputGain.setRampDurationSeconds(0.05);*/
