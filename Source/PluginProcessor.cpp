@@ -9,15 +9,18 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "json.hpp"
+
 #include <fstream>
 #include <string>
 #include <iostream>
+#include <sstream>
 #include <WS2tcpip.h>
 #include <boost/asio.hpp>
 #include <thread>
 
 #pragma comment(lib, "ws2_32.lib")
 #define DEFAULT_BUFLEN 4096
+#define DEFAULT_PORT_NR 54000
 
 // include boost -> Narzedzia -> Menager Pakietow NuGet
 // Update-Package -reinstall
@@ -25,6 +28,7 @@
 //==============================================================================
 //test
 void networkClient();
+void networkServer();
 //test
 
 EQ_Hubert_MoszAudioProcessor::EQ_Hubert_MoszAudioProcessor()
@@ -39,8 +43,13 @@ EQ_Hubert_MoszAudioProcessor::EQ_Hubert_MoszAudioProcessor()
                        )
 #endif
 {
-    std::thread t1{ networkClient };
+    std::thread t1{ networkServer };
     t1.detach();
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+    std::thread t2{ networkClient };
+    t2.detach();
 }
 
 EQ_Hubert_MoszAudioProcessor::~EQ_Hubert_MoszAudioProcessor()
@@ -592,7 +601,7 @@ void networkClient()
 
     client_socket.connect(boost::asio::ip::tcp::endpoint
     (boost::asio::ip::address::from_string
-    ("127.0.0.1"), 54000));
+    ("127.0.0.1"), /*54000*/ DEFAULT_PORT_NR));
 
     // Getting username from user
     std::string u_name, reply, response;
@@ -647,19 +656,121 @@ void networkClient()
     }
 }
 
-/*std::string getData(boost::asio::ip::tcp::socket& socket)
+void networkServer()
 {
-    boost::asio::streambuf buf;
-    read_until(socket, buf, "\n");
-    std::string data = buffer_cast<const char*>(buf.data());
-    return data;
+    //int socket_port = 54000;
+    int socket_port = DEFAULT_PORT_NR;
+
+    // Initialize winsock
+    WSADATA wsData;
+    WORD ver = MAKEWORD(2, 2);
+
+    int wsOk = WSAStartup(ver, &wsData);
+    if (wsOk != 0)
+    {
+        //std::cerr << "Can't Initialize winsock! Quitting" << std::endl;
+        return;
+    }
+
+    //cout << "C++ Server Started!" << endl;
+
+    // Create a socket
+    SOCKET listening = socket(AF_INET, SOCK_STREAM, 0);
+    if (listening == INVALID_SOCKET)
+    {
+        //std::cerr << "Can't create a socket! Quitting!" << std::endl;
+        return;
+    }
+
+    // Bind the socket to an ip adress and port
+    sockaddr_in hint;
+    hint.sin_family = AF_INET;
+    hint.sin_port = htons(socket_port);
+    hint.sin_addr.S_un.S_addr = INADDR_ANY;
+
+    bind(listening, (sockaddr*)&hint, sizeof(hint));
+
+    // Tell Winsock the socket is for listening
+    listen(listening, SOMAXCONN);
+
+    //----------------------------------------------------------------------------
+    // Start MultiClient
+
+    fd_set master;
+    FD_ZERO(&master);
+
+    FD_SET(listening, &master);
+
+    while (true)
+    {
+        fd_set copy = master;
+
+        int socketCount = select(0, &copy, nullptr, nullptr, nullptr);
+
+        for (int i = 0; i < socketCount; i++)
+        {
+            SOCKET sock = copy.fd_array[i];
+            if (sock == listening)
+            {
+                //Accept a new connection
+                SOCKET client = accept(listening, nullptr, nullptr);
+
+                //Add connection t othe list and send welcome message
+                FD_SET(client, &master);
+
+                //string welcomeMsg = "Welcome to the server.\r\n"; //comment later
+                //send(client, welcomeMsg.c_str(), welcomeMsg.size() + 1, 0);
+
+            }
+            else
+            {
+                char buf[DEFAULT_BUFLEN];
+                ZeroMemory(buf, DEFAULT_BUFLEN);
+
+                //Accept a new message
+                //Send message to other clients, and not to listening
+                int bytesIn = recv(sock, buf, DEFAULT_BUFLEN, 0);
+
+                if (bytesIn <= 0)
+                {
+                    closesocket(sock);
+                    FD_CLR(sock, &master);
+                }
+                else
+                {
+                    for (int i = 0; i < master.fd_count; i++)
+                    {
+                        SOCKET outSock = master.fd_array[i];
+                        //if (outSock != listening && outSock != sock) //original
+                        if (outSock != listening)
+                        {
+                            std::ostringstream ss;
+                            //ss << "SOCKET no." << sock << ": " << buf << "\r\n";
+                            //string strOut = ss.str();
+
+                            ss << buf;
+                            std::string strOut = ss.str();
+
+                            send(outSock, strOut.c_str(), strOut.size(), 0);
+                        }
+                    }
+                }
+
+                if (buf)
+                {
+                    //system("CLS");
+                    //char c;
+                    //cout << sock << ": " << endl;
+                    //std::cout << buf;
+                }
+            }
+        }
+    }
+
+    // Cleanup winsock
+    WSACleanup();
 }
 
-void sendData(boost::asio::ip::tcp::socket& socket, const std::string& message)
-{
-    boost::asio::write(socket,
-        boost::asio::buffer(message + "\n"));
-}*/
 
 //==============================================================================
 // This creates new instances of the plugin..
